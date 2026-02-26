@@ -68,4 +68,4 @@ Contact: * IT Support Help Desk - kkuniversity.ac.in
 
 Project Lead - [ramayanyug@gmail.com]
 
-Repository Link - https://github.com/your-org/kku-feedback-porta
+Repository Link - https://github.com/adarsh-tripathi-94/KKU-SOETR-with-exam-form.git
