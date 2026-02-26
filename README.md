@@ -52,6 +52,8 @@ Ensure you have the following installed on your local machine:
 * Git
 * A running instance of your chosen database (MongoDB/PostgreSQL)
 
+---
+
 ## ⬇️ Installation Steps
 
 1. **Clone the repository:**
