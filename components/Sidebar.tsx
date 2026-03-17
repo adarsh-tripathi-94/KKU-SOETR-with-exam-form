@@ -49,7 +49,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               '/form/leave': 'leave',
               '/form/internship': 'internship',
               '/form/grievance': 'grievance',
-              'https://6984b4fa129d0152d3f722cf--precious-treacle-692682.netlify.app/': 'feedback'
+              'https://kk-university-feedback-portal.ramayanyug.workers.dev': 'feedback'
             };
             
             const formId = formMap[link.path];
