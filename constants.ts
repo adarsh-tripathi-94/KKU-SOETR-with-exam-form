@@ -196,7 +196,7 @@ export const SIDEBAR_LINKS = [
   { label: 'Internship Letter', path: '/form/internship' },
   { label: 'Result', path: '/view/result' },
   { label: 'Grievance', path: '/form/grievance' },
-  { label: 'Feedback', path: 'https://6984b4fa129d0152d3f722cf--precious-treacle-692682.netlify.app/' },
+  { label: 'Feedback', path: 'https://kk-university-feedback-portal.ramayanyug.workers.dev' },
 ];
 
 export interface SchoolMapping {

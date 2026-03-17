@@ -76,7 +76,7 @@ export const SearchPortal: React.FC = () => {
           <div className="w-full relative z-10">
             <h2 className="text-center font-black uppercase underline text-2xl mb-12 tracking-[0.15em] text-kku-blue">Digital Cumulative Academic Record</h2>
             
-            <div className="grid grid-cols-2 gap-x-12 gap-y-8 mb-16">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-8">
               {[
                 { l: "Admission ID", v: foundRecord.basicInfo.enrollmentNo },
                 { l: "Legal Name", v: foundRecord.basicInfo.name },

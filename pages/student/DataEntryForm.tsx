@@ -163,7 +163,7 @@ export const DataEntryForm: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-200 py-10 flex flex-col items-center font-serif text-black overflow-x-hidden">
       {/* High-Impact Digital Form Container */}
-      <div className="bg-white shadow-2xl border-[1.5mm] border-[#001F3F] p-[10mm] w-[210mm] min-h-[297mm] box-border relative">
+      <div className="bg-white shadow-2xl border-[1.5mm] border-[#001F3F] p-[5mm] md:p-[10mm] w-full max-w-[210mm] min-h-[297mm] box-border relative overflow-hidden">
         
         {/* Header Section */}
         <div className="flex items-center justify-between mb-2">

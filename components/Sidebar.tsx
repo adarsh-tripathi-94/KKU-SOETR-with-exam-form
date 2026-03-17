@@ -23,16 +23,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         />
       )}
 
-      <aside className={`fixed left-0 top-0 md:top-[128px] bottom-0 w-[320px] bg-[#000F1F] overflow-y-auto shadow-[15px_0_60px_rgba(0,0,0,0.8)] z-[110] no-print transition-all duration-700 transform ease-in-out border-r-2 border-kku-gold/20
+      <aside className={`fixed left-0 top-0 md:top-[128px] bottom-0 w-[85vw] max-w-[320px] bg-[#000F1F] overflow-y-auto shadow-[15px_0_60px_rgba(0,0,0,0.8)] z-[110] no-print transition-all duration-700 transform ease-in-out border-r-2 border-kku-gold/20
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
-        {/* Decorative Top Accent */}
+
         <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-kku-gold via-yellow-300 to-kku-gold opacity-80"></div>
 
-        <div className="md:hidden flex items-center justify-between p-8 border-b border-white/10 bg-black/40">
-          <span className="text-kku-gold font-black tracking-[0.3em] uppercase text-[10px]">SOETR Navigation</span>
+        <div className="md:hidden flex items-center justify-between p-5 border-b border-white/10 bg-black/40">
+          <span className="text-kku-gold font-black tracking-[0.2em] uppercase text-[10px]">SOETR Navigation</span>
           <button onClick={onClose} className="text-gray-400 hover:text-white p-2 transition-all active:scale-90">
-            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path>
             </svg>
           </button>

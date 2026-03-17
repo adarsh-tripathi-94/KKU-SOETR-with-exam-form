@@ -7,12 +7,14 @@ export const Footer: React.FC = () => {
     <footer className="bg-kku-blue text-white mt-auto border-t-4 border-kku-gold no-print relative overflow-hidden">
       {/* Subtle Background Pattern */}
       <div className="absolute inset-0 opacity-[0.02] pointer-events-none">
-        <svg width="100%" height="100%"><rect width="100%" height="100%" fill="url(#grid)" /></svg>
-        <defs>
-          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="1"/>
-          </pattern>
-        </defs>
+        <svg width="100%" height="100%">
+          <defs>
+            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="1"/>
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#grid)" />
+        </svg>
       </div>
 
       <div className="container mx-auto px-6 py-6 relative z-10">

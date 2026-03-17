@@ -283,7 +283,7 @@ export const ExamForm: React.FC = () => {
           <button onClick={() => navigate('/')} className="relative z-10 bg-white/10 border-2 border-white/20 px-8 py-3 rounded-2xl font-black text-xs uppercase hover:bg-red-700 transition shadow-lg">Cancel Registry</button>
         </div>
 
-        <form onSubmit={handleInitialVerify} className="p-8 md:p-24 space-y-16">
+        <form onSubmit={handleInitialVerify} className="p-4 md:p-24 space-y-8 md:space-y-16">
           {errors.length > 0 && (
             <div className="bg-red-50 border-l-8 border-red-700 p-10 rounded-[3rem] shadow-xl animate-fadeIn">
               <h3 className="text-red-700 font-black uppercase text-xs mb-4 tracking-widest">Audit Alerts:</h3>
@@ -358,7 +358,7 @@ export const ExamForm: React.FC = () => {
           </div>
 
           <div className="mt-40 pt-20 border-t-8 border-gray-50 flex flex-col items-center">
-             <button type="submit" className="w-full max-w-4xl py-14 bg-kku-blue text-white font-black uppercase tracking-[0.5em] border-4 border-white hover:bg-black transition-all shadow-[0_40px_100px_rgba(0,31,63,0.3)] text-3xl rounded-[4rem] flex items-center justify-center gap-10 group">
+             <button type="submit" className="w-full max-w-4xl py-6 md:py-14 bg-kku-blue text-white font-black uppercase tracking-widest md:tracking-[0.5em] border-4 border-white hover:bg-black transition-all shadow-[0_20px_50px_rgba(0,31,63,0.3)] text-lg md:text-3xl rounded-[2rem] md:rounded-[4rem] flex flex-col md:flex-row items-center justify-center gap-4 md:gap-10 group text-center px-4">
                Generate official Artifacts
                <svg className="w-10 h-10 transition-transform group-hover:translate-x-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
              </button>

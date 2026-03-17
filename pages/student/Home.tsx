@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import chancellorImg from './ChancellorSir.png';
 
 const SERVICE_BUTTONS = [
   { id: 'notice-board', label: 'Notice Board', path: '/view/notice-board', category: 'Notice', icon: 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9' },
@@ -58,74 +59,78 @@ export const Home: React.FC = () => {
 
   const visibleFormButtons = FORM_BUTTONS.filter(btn => isFormOpen(btn.id));
 
+  /* Keep your imports, constants, and the top part of the Home component the same. 
+   Replace the return() statement onwards with this: */
+
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 pb-24 w-full no-print font-sans">
+    <div className="flex flex-col min-h-screen bg-gray-50 pb-24 w-full no-print font-sans overflow-x-hidden">
+      {/* Hero Section */}
       <div className="relative w-full h-[315px] md:h-[480px] overflow-hidden shadow-2xl border-b-8 border-kku-gold bg-kku-blue">
         {activeGallery.length > 0 ? activeGallery.map((img, idx) => (
           <div key={img.id} className={`absolute inset-0 transition-all duration-[2000ms] ease-in-out ${idx === currentSlide ? 'opacity-100 scale-100 z-10' : 'opacity-0 scale-110 z-0'}`}>
             <div className="w-full h-full bg-cover bg-center" style={{ backgroundImage: `url("${img.url}")` }}>
               <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent"></div>
-              <div className="absolute bottom-12 left-6 md:left-24 text-white max-w-5xl animate-fadeIn">
-                <span className="bg-kku-gold text-kku-blue px-6 py-1 text-[10px] font-black uppercase tracking-[0.3em] mb-4 inline-block rounded-full shadow-lg">SOETR Academic Hub</span>
-                <h2 className="text-3xl md:text-5xl font-serif font-black uppercase tracking-tight leading-none drop-shadow-2xl">{img.title}</h2>
-                <p className="text-xs md:text-lg font-bold text-gray-300 mt-4 tracking-wide max-w-3xl leading-relaxed">{img.description}</p>
+              <div className="absolute bottom-10 md:bottom-12 left-4 md:left-24 text-white max-w-[90%] md:max-w-5xl animate-fadeIn pr-4">
+                <span className="bg-kku-gold text-kku-blue px-4 md:px-6 py-1 text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] mb-4 inline-block rounded-full shadow-lg">SOETR Academic Hub</span>
+                <h2 className="text-2xl md:text-5xl font-serif font-black uppercase tracking-tight leading-none drop-shadow-2xl break-words">{img.title}</h2>
+                <p className="text-xs md:text-lg font-bold text-gray-300 mt-2 md:mt-4 tracking-wide max-w-3xl leading-relaxed line-clamp-2 md:line-clamp-none">{img.description}</p>
               </div>
             </div>
           </div>
         )) : (
-          <div className="absolute inset-0 flex items-center justify-center text-white/20">
-            <span className="text-2xl font-black uppercase tracking-[0.5em]">SOETR Institutional Hub</span>
+          <div className="absolute inset-0 flex items-center justify-center text-white/20 text-center px-4">
+            <span className="text-xl md:text-2xl font-black uppercase tracking-[0.2em] md:tracking-[0.5em]">SOETR Institutional Hub</span>
           </div>
         )}
         
         {activeGallery.length > 1 && (
-          <div className="absolute bottom-6 right-6 md:right-12 flex gap-2 z-30 flex-wrap justify-end max-w-[200px] md:max-w-none">
+          <div className="absolute bottom-4 md:bottom-6 right-4 md:right-12 flex gap-2 z-30 flex-wrap justify-end">
             {activeGallery.map((_, i) => (
-              <button key={i} onClick={() => setCurrentSlide(i)} className={`h-2 rounded-full transition-all border border-white/50 ${i === currentSlide ? 'bg-kku-gold w-8 ring-2 ring-kku-gold/30 shadow-lg' : 'bg-white/20 w-2 hover:bg-white/40'}`} />
+              <button key={i} onClick={() => setCurrentSlide(i)} className={`h-2 rounded-full transition-all border border-white/50 ${i === currentSlide ? 'bg-kku-gold w-6 md:w-8 ring-2 ring-kku-gold/30 shadow-lg' : 'bg-white/20 w-2 hover:bg-white/40'}`} />
             ))}
           </div>
         )}
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 md:px-8 w-full -mt-14 relative z-20">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 w-full -mt-8 md:-mt-14 relative z-20">
         {/* Top Feature Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-          <button onClick={() => navigate('/portal/search')} className="flex flex-col items-center p-8 bg-white border-2 border-kku-blue rounded-[2.5rem] shadow-2xl hover:-translate-y-2 transition-all group">
-            <div className="w-14 h-14 bg-kku-blue text-kku-gold flex items-center justify-center mb-4 rounded-3xl group-hover:bg-kku-gold group-hover:text-kku-blue transition-all"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-8 h-8"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div>
-            <h3 className="text-xl font-black uppercase tracking-widest text-kku-blue text-center">Security Portal</h3>
-            <p className="text-[9px] font-black uppercase text-gray-400 mt-2 tracking-[0.2em]">Official Record Lookup</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-16">
+          <button onClick={() => navigate('/portal/search')} className="flex flex-col items-center p-6 md:p-8 bg-white border-2 border-kku-blue rounded-[2rem] md:rounded-[2.5rem] shadow-2xl hover:-translate-y-2 transition-all group">
+            <div className="w-12 h-12 md:w-14 md:h-14 bg-kku-blue text-kku-gold flex items-center justify-center mb-4 rounded-3xl group-hover:bg-kku-gold group-hover:text-kku-blue transition-all"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-6 h-6 md:w-8 md:h-8"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div>
+            <h3 className="text-lg md:text-xl font-black uppercase tracking-widest text-kku-blue text-center">Security Portal</h3>
+            <p className="text-[8px] md:text-[9px] font-black uppercase text-gray-400 mt-2 tracking-[0.2em] text-center">Official Record Lookup</p>
           </button>
-          <a href="https://www.youtube.com/@K.K.UniversityS.O.E.R.T" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center p-8 bg-red-700 text-white rounded-[2.5rem] shadow-2xl hover:-translate-y-2 transition-all group">
-            <div className="w-14 h-14 bg-white text-red-700 flex items-center justify-center mb-4 rounded-3xl"><svg fill="currentColor" viewBox="0 0 24 24" className="w-8 h-8"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505a3.017 3.017 0 0 0-2.122 2.136C0 8.055 0 12 0 12s0 3.945.501 5.814a3.017 3.017 0 0 0 2.122 2.136C4.495 20.455 12 20.455 12 20.455s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.945 24 12 24 12s0-3.945-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg></div>
-            <h3 className="text-xl font-black uppercase tracking-widest text-center">YouTube Hub</h3>
-            <p className="text-[9px] font-black uppercase text-red-100 mt-2 tracking-[0.2em]">Lecture Archives</p>
+          <a href="https://www.youtube.com/@K.K.UniversityS.O.E.R.T" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center p-6 md:p-8 bg-red-700 text-white rounded-[2rem] md:rounded-[2.5rem] shadow-2xl hover:-translate-y-2 transition-all group">
+            <div className="w-12 h-12 md:w-14 md:h-14 bg-white text-red-700 flex items-center justify-center mb-4 rounded-3xl"><svg fill="currentColor" viewBox="0 0 24 24" className="w-6 h-6 md:w-8 md:h-8"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505a3.017 3.017 0 0 0-2.122 2.136C0 8.055 0 12 0 12s0 3.945.501 5.814a3.017 3.017 0 0 0 2.122 2.136C4.495 20.455 12 20.455 12 20.455s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.945 24 12 24 12s0-3.945-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg></div>
+            <h3 className="text-lg md:text-xl font-black uppercase tracking-widest text-center">YouTube Hub</h3>
+            <p className="text-[8px] md:text-[9px] font-black uppercase text-red-100 mt-2 tracking-[0.2em] text-center">Lecture Archives</p>
           </a>
-          <a href="https://kkuniversity.ac.in/" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center p-8 bg-kku-blue text-white rounded-[2.5rem] shadow-2xl hover:-translate-y-2 transition-all group">
-            <div className="w-14 h-14 bg-kku-gold text-kku-blue flex items-center justify-center mb-4 rounded-3xl"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-8 h-8"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg></div>
-            <h3 className="text-xl font-black uppercase tracking-widest text-kku-gold text-center">Main Website</h3>
-            <p className="text-[9px] font-black uppercase text-white mt-2 tracking-[0.2em]">University Portal</p>
+          <a href="https://kkuniversity.ac.in/" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center p-6 md:p-8 bg-kku-blue text-white rounded-[2rem] md:rounded-[2.5rem] shadow-2xl hover:-translate-y-2 transition-all group">
+            <div className="w-12 h-12 md:w-14 md:h-14 bg-kku-gold text-kku-blue flex items-center justify-center mb-4 rounded-3xl"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-6 h-6 md:w-8 md:h-8"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg></div>
+            <h3 className="text-lg md:text-xl font-black uppercase tracking-widest text-kku-gold text-center">Main Website</h3>
+            <p className="text-[8px] md:text-[9px] font-black uppercase text-white mt-2 tracking-[0.2em] text-center">University Portal</p>
           </a>
         </div>
 
         {/* Leadership Section */}
         {isLeadershipVisible && governingBody.length > 0 && (
-          <div className="mb-24 animate-fadeIn">
-            <div className="flex flex-col items-center mb-12 text-center">
-              <h2 className="text-4xl font-serif font-black text-kku-blue uppercase tracking-[0.4em]">Institutional Leadership</h2>
-              <div className="h-1.5 w-32 bg-kku-gold mt-4 rounded-full"></div>
-              <p className="text-[11px] font-black uppercase text-gray-400 mt-3 tracking-widest">Office of the Excellence</p>
+          <div className="mb-16 md:mb-24 animate-fadeIn">
+            <div className="flex flex-col items-center mb-8 md:mb-12 text-center px-2">
+              <h2 className="text-2xl md:text-4xl font-serif font-black text-kku-blue uppercase tracking-[0.2em] md:tracking-[0.4em] break-words">Institutional Leadership</h2>
+              <div className="h-1.5 w-24 md:w-32 bg-kku-gold mt-4 rounded-full"></div>
             </div>
-            <div className="space-y-12">
+            <div className="space-y-8 md:space-y-12">
               {governingBody.map((member, idx) => (
-                <div key={member.id} className={`flex flex-col ${idx % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'} items-center gap-12 bg-white border-4 border-kku-blue rounded-[4rem] p-12 shadow-[0_40px_100px_rgba(0,31,63,0.1)] hover:-translate-y-2 transition-all group`}>
-                  <div className="w-64 h-64 md:w-80 md:h-80 rounded-[3rem] border-8 border-gray-50 overflow-hidden shadow-2xl ring-8 ring-kku-gold/10 shrink-0">
-                    <img src="./ChancellorSir.png" alt={member.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                <div key={member.id} className={`flex flex-col ${idx % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'} items-center gap-8 md:gap-12 bg-white border-4 border-kku-blue rounded-[2.5rem] md:rounded-[4rem] p-6 md:p-12 shadow-[0_40px_100px_rgba(0,31,63,0.1)] hover:-translate-y-2 transition-all group`}>
+                  {/* FIXED: Reduced w-64 to w-48 on mobile so it doesn't overflow */}
+                  <div className="w-48 h-48 md:w-80 md:h-80 rounded-[2rem] md:rounded-[3rem] border-8 border-gray-50 overflow-hidden shadow-2xl ring-8 ring-kku-gold/10 shrink-0">
+                    <img src={member.title.toLowerCase().includes('chancellor') ? chancellorImg : member.image} alt={member.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                   </div>
                   <div className={`flex-1 flex flex-col items-center ${idx % 2 === 0 ? 'md:items-start md:text-left' : 'md:items-end md:text-right'} text-center`}>
-                    <span className="bg-kku-blue text-white px-6 py-1.5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] mb-4">Master Authority</span>
-                    <h3 className="text-4xl font-black uppercase tracking-tight text-kku-blue mb-1">{member.name}</h3>
-                    <p className="text-lg font-black uppercase text-kku-gold tracking-[0.2em] mb-8">{member.title}</p>
-                    <p className="text-lg font-serif font-bold text-gray-700 leading-relaxed italic border-l-4 border-kku-gold/40 pl-6">{member.description}</p>
+                    <span className="bg-kku-blue text-white px-4 md:px-6 py-1.5 rounded-2xl font-black text-[9px] md:text-[10px] uppercase tracking-[0.2em] mb-4">Master Authority</span>
+                    <h3 className="text-2xl md:text-4xl font-black uppercase tracking-tight text-kku-blue mb-1">{member.name}</h3>
+                    <p className="text-sm md:text-lg font-black uppercase text-kku-gold tracking-[0.1em] md:tracking-[0.2em] mb-6 md:mb-8">{member.title}</p>
+                    <p className="text-sm md:text-lg font-serif font-bold text-gray-700 leading-relaxed italic md:border-l-4 md:border-kku-gold/40 md:pl-6">{member.description}</p>
                   </div>
                 </div>
               ))}
@@ -134,65 +139,63 @@ export const Home: React.FC = () => {
         )}
 
         {/* Academic Infrastructure Master Group */}
-        <div className="mb-24 space-y-16">
+        <div className="mb-16 md:mb-24 space-y-12 md:space-y-16">
           <div>
-            <h2 className="text-3xl font-serif font-black text-kku-blue uppercase tracking-[0.3em] border-l-8 border-kku-gold pl-8 mb-12">Academic Infrastructure</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+            <h2 className="text-xl md:text-3xl font-serif font-black text-kku-blue uppercase tracking-[0.1em] md:tracking-[0.3em] border-l-4 md:border-l-8 border-kku-gold pl-4 md:pl-8 mb-8 md:mb-12">Academic Infrastructure</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6">
               {SERVICE_BUTTONS.map(btn => {
                 const count = getArtifactCount(btn.category);
                 const isOpen = isFormOpen(btn.id);
                 if (!isOpen) return null;
                 return (
-                  <button key={btn.id} onClick={() => navigate(btn.path)} className="flex flex-col items-center justify-center p-10 bg-white border border-black rounded-[2.5rem] shadow-xl hover:bg-kku-blue hover:text-white transition-all transform hover:-translate-y-1 group relative overflow-hidden">
-                    {count > 0 && <div className="absolute top-4 right-4 bg-kku-gold text-kku-blue text-[9px] font-black px-2 py-0.5 rounded-full shadow-md animate-pulse">{count} New</div>}
-                    <div className="w-12 h-12 mb-6 text-kku-gold group-hover:text-white transition-colors"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-full h-full"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={btn.icon}></path></svg></div>
-                    <span className="text-[11px] font-black uppercase text-center tracking-widest leading-tight">{btn.label}</span>
+                  /* FIXED: Reduced mobile padding from p-10 to p-4 */
+                  <button key={btn.id} onClick={() => navigate(btn.path)} className="flex flex-col items-center justify-center p-4 md:p-10 bg-white border border-black rounded-[1.5rem] md:rounded-[2.5rem] shadow-xl hover:bg-kku-blue hover:text-white transition-all transform hover:-translate-y-1 group relative overflow-hidden">
+                    {count > 0 && <div className="absolute top-2 right-2 md:top-4 md:right-4 bg-kku-gold text-kku-blue text-[8px] md:text-[9px] font-black px-2 py-0.5 rounded-full shadow-md animate-pulse">{count} New</div>}
+                    <div className="w-8 h-8 md:w-12 md:h-12 mb-4 md:mb-6 text-kku-gold group-hover:text-white transition-colors"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-full h-full"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={btn.icon}></path></svg></div>
+                    <span className="text-[9px] md:text-[11px] font-black uppercase text-center tracking-wider md:tracking-widest leading-tight">{btn.label}</span>
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* Educational Hub Row - Horizontal Grid style */}
           <div>
-            <h4 className="text-xl font-serif font-black text-red-700 uppercase tracking-[0.3em] border-l-4 border-red-700 pl-6 mb-8">Educational Hub</h4>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+            <h4 className="text-lg md:text-xl font-serif font-black text-red-700 uppercase tracking-[0.1em] md:tracking-[0.3em] border-l-4 border-red-700 pl-4 md:pl-6 mb-6 md:mb-8">Educational Hub</h4>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6">
               {ACADEMIC_PLATFORMS.map(p => (
-                <a key={p.name} href={p.url} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center justify-center p-10 bg-white border border-black rounded-[2.5rem] shadow-xl hover:bg-red-700 hover:text-white transition-all transform hover:-translate-y-1 group">
-                  <div className={`w-12 h-12 mb-6 ${p.color} group-hover:text-white transition-colors`}>
+                <a key={p.name} href={p.url} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center justify-center p-4 md:p-10 bg-white border border-black rounded-[1.5rem] md:rounded-[2.5rem] shadow-xl hover:bg-red-700 hover:text-white transition-all transform hover:-translate-y-1 group">
+                  <div className={`w-8 h-8 md:w-12 md:h-12 mb-4 md:mb-6 ${p.color} group-hover:text-white transition-colors`}>
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-full h-full"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={p.icon}></path></svg>
                   </div>
-                  <span className="text-[11px] font-black uppercase text-center tracking-widest leading-tight">{p.name}</span>
+                  <span className="text-[9px] md:text-[11px] font-black uppercase text-center tracking-wider md:tracking-widest leading-tight">{p.name}</span>
                 </a>
               ))}
             </div>
           </div>
 
-          {/* Career Portals Row - Horizontal Grid style */}
           <div>
-            <h4 className="text-xl font-serif font-black text-blue-900 uppercase tracking-[0.3em] border-l-4 border-blue-900 pl-6 mb-8">Career Search Portals</h4>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+            <h4 className="text-lg md:text-xl font-serif font-black text-blue-900 uppercase tracking-[0.1em] md:tracking-[0.3em] border-l-4 border-blue-900 pl-4 md:pl-6 mb-6 md:mb-8">Career Search Portals</h4>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6">
               {CAREER_PLATFORMS.map(p => (
-                <a key={p.name} href={p.url} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center justify-center p-10 bg-white border border-black rounded-[2.5rem] shadow-xl hover:bg-blue-900 hover:text-white transition-all transform hover:-translate-y-1 group">
-                  <div className={`w-12 h-12 mb-6 ${p.color} group-hover:text-white transition-colors`}>
+                <a key={p.name} href={p.url} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center justify-center p-4 md:p-10 bg-white border border-black rounded-[1.5rem] md:rounded-[2.5rem] shadow-xl hover:bg-blue-900 hover:text-white transition-all transform hover:-translate-y-1 group">
+                  <div className={`w-8 h-8 md:w-12 md:h-12 mb-4 md:mb-6 ${p.color} group-hover:text-white transition-colors`}>
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-full h-full"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={p.icon}></path></svg>
                   </div>
-                  <span className="text-[11px] font-black uppercase text-center tracking-widest leading-tight">{p.name}</span>
+                  <span className="text-[9px] md:text-[11px] font-black uppercase text-center tracking-wider md:tracking-widest leading-tight">{p.name}</span>
                 </a>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Institutional Registrations - Placed strictly below Infrastructure */}
         {visibleFormButtons.length > 0 && (
-          <div className="mb-24 animate-fadeIn">
-            <h2 className="text-3xl font-serif font-black text-blue-900 uppercase tracking-[0.3em] border-l-8 border-red-700 pl-8 mb-12">Institutional Registrations</h2>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+          <div className="mb-16 md:mb-24 animate-fadeIn">
+            <h2 className="text-xl md:text-3xl font-serif font-black text-blue-900 uppercase tracking-[0.1em] md:tracking-[0.3em] border-l-4 md:border-l-8 border-red-700 pl-4 md:pl-8 mb-8 md:mb-12">Institutional Registrations</h2>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6">
               {visibleFormButtons.map(btn => (
-                <button key={btn.id} onClick={() => navigate(btn.path)} className="flex flex-col items-center justify-center p-10 border-2 border-blue-900 bg-white rounded-[2.5rem] transition-all shadow-xl hover:-translate-y-1 hover:bg-blue-900 hover:text-white group">
-                  <div className="w-12 h-12 mb-6"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-full h-full text-blue-900 group-hover:text-white"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={btn.icon}></path></svg></div>
-                  <span className="text-[11px] font-black uppercase text-center tracking-widest leading-tight">{btn.label}</span>
+                <button key={btn.id} onClick={() => navigate(btn.path)} className="flex flex-col items-center justify-center p-4 md:p-10 border-2 border-blue-900 bg-white rounded-[1.5rem] md:rounded-[2.5rem] transition-all shadow-xl hover:-translate-y-1 hover:bg-blue-900 hover:text-white group">
+                  <div className="w-8 h-8 md:w-12 md:h-12 mb-4 md:mb-6"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-full h-full text-blue-900 group-hover:text-white"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={btn.icon}></path></svg></div>
+                  <span className="text-[9px] md:text-[11px] font-black uppercase text-center tracking-wider md:tracking-widest leading-tight">{btn.label}</span>
                 </button>
               ))}
             </div>

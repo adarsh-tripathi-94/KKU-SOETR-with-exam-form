@@ -56,18 +56,22 @@ const DataDrivenView = ({ title, category }: { title: string, category: string }
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto min-h-[70vh]">
-      <div className="bg-white rounded-[3rem] shadow-2xl border-4 border-kku-blue overflow-hidden">
-        <div className="bg-kku-blue text-white p-12 border-b-8 border-kku-gold flex justify-between items-center">
+    /* FIXED: Reduced base padding from p-8 to p-4 for mobile */
+    <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-[70vh]">
+      <div className="bg-white rounded-[2rem] md:rounded-[3rem] shadow-2xl border-4 border-kku-blue overflow-hidden">
+        
+        /* FIXED: Changed flex to stack on mobile (flex-col), reduced text size, and reduced padding */
+        <div className="bg-kku-blue text-white p-6 md:p-12 border-b-8 border-kku-gold flex flex-col md:flex-row gap-6 justify-between items-center text-center md:text-left">
           <div>
-            <h1 className="text-4xl font-serif font-black tracking-widest uppercase">{title}</h1>
-            <p className="text-kku-gold mt-3 text-sm font-black uppercase tracking-[0.2em]">Institutional Artifact Repository</p>
+            <h1 className="text-2xl md:text-4xl font-serif font-black tracking-widest uppercase">{title}</h1>
+            <p className="text-kku-gold mt-2 md:mt-3 text-xs md:text-sm font-black uppercase tracking-[0.2em]">Institutional Artifact Repository</p>
           </div>
-          <button onClick={() => navigate(-1)} className="bg-white text-kku-blue px-8 py-3 rounded-2xl font-black text-xs uppercase tracking-widest border-2 border-white hover:bg-black hover:text-white transition shadow-xl">Exit Hub</button>
+          <button onClick={() => navigate(-1)} className="bg-white text-kku-blue w-full md:w-auto px-8 py-3 rounded-2xl font-black text-xs uppercase tracking-widest border-2 border-white hover:bg-black hover:text-white transition shadow-xl">Exit Hub</button>
         </div>
 
-        <div className="p-10 bg-gray-50 border-b-2 border-black/5">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        /* FIXED: Reduced padding from p-10 to p-6 */
+        <div className="p-6 md:p-10 bg-gray-50 border-b-2 border-black/5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
             <div>
               <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Academic Programme</label>
               <select value={programme} onChange={e => { setProgramme(e.target.value); setYear(''); setSession(''); setSemester(''); }} className="soetr-input">
@@ -101,25 +105,25 @@ const DataDrivenView = ({ title, category }: { title: string, category: string }
           </div>
         </div>
 
-        <div className="p-12 min-h-[400px]">
+        <div className="p-6 md:p-12 min-h-[400px]">
           {filteredContent.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-32 text-gray-300">
-              <h3 className="text-3xl font-serif font-black uppercase tracking-widest text-center">Repository Empty for Selection</h3>
-              <p className="mt-4 font-black uppercase text-[10px] tracking-[0.4em] opacity-60">Curricular sync required for selection matrix.</p>
+            <div className="flex flex-col items-center justify-center py-20 md:py-32 text-gray-300 px-4">
+              <h3 className="text-xl md:text-3xl font-serif font-black uppercase tracking-widest text-center">Repository Empty for Selection</h3>
+              <p className="mt-4 font-black uppercase text-[10px] tracking-[0.2em] md:tracking-[0.4em] text-center opacity-60">Curricular sync required for selection matrix.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10">
               {filteredContent.map(item => (
-                <div key={item.id} className="group bg-white border-4 border-black rounded-[3rem] p-10 hover:shadow-[20px_20px_0_rgba(0,31,63,0.1)] transition-all transform hover:-translate-y-2 relative overflow-hidden flex flex-col h-full">
+                <div key={item.id} className="group bg-white border-4 border-black rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 hover:shadow-[20px_20px_0_rgba(0,31,63,0.1)] transition-all transform hover:-translate-y-2 relative overflow-hidden flex flex-col h-full">
                   <div className="bg-kku-gold/10 text-kku-gold text-[9px] font-black px-4 py-1.5 rounded-full uppercase border border-kku-gold/20 tracking-widest self-start mb-6">{item.category}</div>
-                  <h4 className="text-2xl font-black text-kku-blue leading-tight mb-4 group-hover:text-black transition-colors">{item.title}</h4>
+                  <h4 className="text-xl md:text-2xl font-black text-kku-blue leading-tight mb-4 group-hover:text-black transition-colors">{item.title}</h4>
                   <p className="text-[11px] font-bold text-gray-500 mb-8 line-clamp-3 italic leading-relaxed">{item.description}</p>
-                  <div className="mt-auto pt-8 border-t-2 border-black/5 flex justify-between items-end">
+                  <div className="mt-auto pt-6 md:pt-8 border-t-2 border-black/5 flex flex-col md:flex-row gap-4 justify-between md:items-end">
                     <div className="text-[9px] font-black text-gray-400 uppercase tracking-tighter leading-tight">
                       <div>STAMP: {item.datePublished}</div>
                       <div className="text-kku-gold mt-1">{item.fileSize} | VERIFIED</div>
                     </div>
-                    <button onClick={() => triggerDownload(item)} className="bg-kku-blue text-white px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition shadow-2xl border-2 border-white/20">Fetch Document</button>
+                    <button onClick={() => triggerDownload(item)} className="bg-kku-blue text-white w-full md:w-auto px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition shadow-2xl border-2 border-white/20">Fetch Document</button>
                   </div>
                 </div>
               ))}
