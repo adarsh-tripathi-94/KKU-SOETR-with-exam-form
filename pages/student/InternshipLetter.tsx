@@ -1,227 +1,361 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { A4FormWrapper, A4Page } from '../../components/A4FormWrapper';
 import { StudentFormData } from '../../types';
-import { BED_MED_SCHOOLS, DELED_INT_SCHOOLS, SchoolMapping, PROGRAMMES, SESSIONS } from '../../constants';
+import { 
+  BED_MED_SCHOOLS, 
+  DELED_INT_SCHOOLS, 
+  SchoolMapping, 
+  PROGRAMMES, 
+  getSessionsForProgramme, 
+  getYearsForProgramme, 
+  getSemestersForProgramme 
+} from '../../constants';
 import { useAuth } from '../../context/AuthContext';
-import { A4FormWrapper } from '../../components/A4FormWrapper';
-import { Logo } from '../../components/Logo';
 
-const MAX_CAPACITY = 20;
+const MAX_CAPACITY = 25;
+
+const PreAffixedSign = ({ label, signUrl }: { label: string; signUrl?: string }) => (
+  <div className="flex flex-col items-center font-serif opacity-100">
+    <div className="w-48 h-10 border-b-[1.5px] border-black flex items-end justify-center pb-1 text-center relative bg-white">
+      {signUrl ? (
+        <img src={signUrl} className="absolute inset-0 w-full h-full object-contain pointer-events-none opacity-100" alt="Official Signature" />
+      ) : (
+        <span className="italic text-gray-400 text-[10pt] font-bold">Authorized Seal</span>
+      )}
+    </div>
+    <span className="text-[8.5pt] font-black text-black uppercase mt-1 text-center whitespace-pre-wrap leading-tight">{label}</span>
+  </div>
+);
+
+const formatDate = (val: string) => {
+  let v = val.replace(/\D/g, '');
+  if (v.length > 2) v = v.slice(0, 2) + '-' + v.slice(2);
+  if (v.length > 5) v = v.slice(0, 5) + '-' + v.slice(5, 9);
+  return v;
+};
 
 export const InternshipLetter: React.FC = () => {
-  const navigate = useNavigate();
-  const { addSubmission, generateRefNo, getSchoolEnrollmentCount, officialSignatures } = useAuth();
-  const [currentRefNo, setCurrentRefNo] = useState('');
-  const [view, setView] = useState<'entry' | 'verify' | 'success'>('entry');
-  const [isSaving, setIsSaving] = useState(false);
-  
   const [formData, setFormData] = useState<Partial<StudentFormData>>({
     programme: 'B.Ed.',
-    session: '2024-2026',
-    year: 'First Year',
-    semester: 'First Semester',
-    internshipStartDate: '',
-    internshipEndDate: '',
-    photoUrl: '',
-    name: '',
-    enrollmentNo: '',
-    mobile: '',
-    internshipSchool: '',
-    internshipObserver: ''
+    formDate: new Date().toLocaleDateString('en-GB').replace(/\//g, '-')
   });
   
+  const { addSubmission, officialSignatures, generateRefNo, getSchoolEnrollmentCount } = useAuth();
+  const [currentRefNo, setCurrentRefNo] = useState('');
   const [activeSchoolList, setActiveSchoolList] = useState<SchoolMapping[]>([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     setCurrentRefNo(generateRefNo());
   }, []);
 
   useEffect(() => {
-    const list = (formData.programme === "B.Ed." || formData.programme === "M.Ed.") 
-      ? BED_MED_SCHOOLS 
-      : DELED_INT_SCHOOLS;
-    setActiveSchoolList(list);
-    // Reset school on programme change
-    setFormData(prev => ({ ...prev, internshipSchool: '', internshipObserver: '' }));
+    if (formData.programme === "B.Ed." || formData.programme === "M.Ed.") {
+      setActiveSchoolList(BED_MED_SCHOOLS);
+    } else {
+      setActiveSchoolList(DELED_INT_SCHOOLS);
+    }
+    if (formData.internshipSchool) {
+      const list = (formData.programme === "B.Ed." || formData.programme === "M.Ed." ? BED_MED_SCHOOLS : DELED_INT_SCHOOLS);
+      const found = list.find(s => s.name === formData.internshipSchool);
+      if (!found) setFormData(prev => ({ ...prev, internshipSchool: '', internshipObserver: '' }));
+    }
   }, [formData.programme]);
 
-  const handlePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const availableSessions = getSessionsForProgramme(formData.programme || 'B.Ed.');
+  const availableYears = getYearsForProgramme(formData.programme || 'B.Ed.');
+  const availableSemesters = getSemestersForProgramme(formData.programme || 'B.Ed.');
+
+  const handleSchoolChange = (schoolName: string) => {
+    const mapping = activeSchoolList.find(s => s.name === schoolName);
+    const supervisor = mapping ? mapping.supervisors[0] : '';
+    setFormData({ ...formData, internshipSchool: schoolName, internshipObserver: supervisor });
+  };
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>, field: keyof StudentFormData) => {
     if (e.target.files?.[0]) {
       const r = new FileReader();
-      r.onload = ev => setFormData({...formData, photoUrl: ev.target?.result as string});
+      r.onload = ev => setFormData(prev => ({ ...prev, [field]: ev.target?.result as string }));
       r.readAsDataURL(e.target.files[0]);
     }
   };
 
-  const handleSchoolChange = (schoolName: string) => {
-    const mapping = activeSchoolList.find(s => s.name === schoolName);
-    const supervisor = mapping && mapping.supervisors.length > 0 ? mapping.supervisors[0] : 'Pending Allotment';
-    setFormData(prev => ({ ...prev, internshipSchool: schoolName, internshipObserver: supervisor }));
+  const validate = (): string[] | null => {
+    const errs: string[] = [];
+    if (!formData.name) errs.push("Student Name is mandatory.");
+    if (!formData.enrollmentNo) errs.push("Admission ID is mandatory.");
+    if (!formData.photoUrl) errs.push("Passport Photo is mandatory.");
+    if (!formData.studentSignatureUrl) errs.push("Student Signature is mandatory.");
+    if (!formData.internshipSchool) errs.push("School selection is mandatory.");
+    if (!formData.internshipStartDate || formData.internshipStartDate.length < 10) errs.push("Valid start date required.");
+    return errs.length > 0 ? errs : null;
   };
 
-  const handleInitialVerify = (e: React.FormEvent) => {
+  const handleSub = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.enrollmentNo || !formData.internshipSchool || !formData.photoUrl || !formData.internshipStartDate) {
-      alert("Institutional Mandate: All identity particulars and school selections are required.");
+    const errs = validate();
+    if (errs) {
+      alert("Missing Requirements:\n\n" + errs.join("\n"));
       return;
     }
+    
     const count = getSchoolEnrollmentCount(formData.internshipSchool!);
     if (count >= MAX_CAPACITY) {
-      alert("Capacity Alert: This school reached regulatory limits. Select another institution.");
+      alert(`This school has reached its maximum capacity of ${MAX_CAPACITY} students.`);
       return;
     }
-    setView('verify');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleFinalSubmit = async () => {
-    setIsSaving(true);
-    await new Promise(resolve => setTimeout(resolve, 2000));
 
     addSubmission({ 
       id: currentRefNo, 
-      date: new Date().toLocaleDateString('en-GB'), 
+      date: formData.formDate || new Date().toLocaleDateString(), 
       enrollmentNo: formData.enrollmentNo || '', 
       name: formData.name || '', 
       programme: formData.programme || '', 
+      session: formData.session || '',
+      year: formData.year || '',
+      semester: formData.semester || '',
       formType: 'Internship Letter',
       school: formData.internshipSchool,
-      data: { ...formData, refNo: currentRefNo }
+      data: { ...formData }
     });
     
-    setIsSaving(false);
-    setView('success');
+    alert(`SIP Allocation Verified & Saved to Database! Ref: ${currentRefNo}`);
+    window.print();
+    setTimeout(() => navigate('/'), 1500);
   };
 
-  const downloadWord = () => {
-    const content = `
-K.K. UNIVERSITY (SOETR) - SIP ALLOTMENT REGISTRY
-------------------------------------------------
-Ref ID: ${currentRefNo}
-Date: ${new Date().toLocaleDateString()}
+  const inputCls = "w-full border-[1.5px] border-black bg-transparent text-black font-bold py-1 px-2 text-[10.5pt] outline-none h-[32px] uppercase";
+  const labelCls = "block text-[8pt] font-black text-black uppercase tracking-tight mb-0.5 mt-2";
 
-STUDENT PARTICULARS:
-Name: ${formData.name}
-ID: ${formData.enrollmentNo}
-Academic: ${formData.programme} (${formData.session})
+  // FIXED BUG 1: Changed from a React Component to a direct render function to prevent input focus loss.
+  const renderFormContent = (isInteractive: boolean) => (
+    <div className="font-serif opacity-100 w-full overflow-hidden">
+      
+      {/* Top Grid Area (Inputs + Photo/Signature) */}
+      <div className="flex flex-row w-full gap-2 md:gap-4">
+        {/* Left Side: Inputs */}
+        <div className="flex-[3] min-w-0">
+          <div className="w-full">
+            <label className={labelCls}>Name of Student (In Block Letters)</label>
+            <input readOnly={!isInteractive} value={formData.name || ''} onChange={e => setFormData({...formData, name: e.target.value})} className={inputCls} placeholder="AS PER MATRICULATION RECORDS" />
+          </div>
+          
+          <div className="flex w-full gap-2 md:gap-4">
+            <div className="flex-1 min-w-0">
+              <label className={labelCls}>Admission / Enrollment No.</label>
+              <input readOnly={!isInteractive} value={formData.enrollmentNo || ''} onChange={e => setFormData({...formData, enrollmentNo: e.target.value})} className={inputCls} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <label className={labelCls}>Academic Session (YYYY-YYYY)</label>
+              {isInteractive ? (
+                <select value={formData.session || ''} onChange={e => setFormData({...formData, session: e.target.value})} className={inputCls}>
+                  <option value="">-- Choose Session --</option>
+                  {availableSessions.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              ) : <div className={inputCls}>{formData.session}</div>}
+            </div>
+          </div>
 
-ALLOTMENT DETAILS:
-Target School: ${formData.internshipSchool}
-Observer: ${formData.internshipObserver}
-Tenure: ${formData.internshipStartDate} to ${formData.internshipEndDate}
+          <div className="flex w-full gap-2 md:gap-4">
+            <div className="flex-1 min-w-0">
+              <label className={labelCls}>Father's Name</label>
+              <input readOnly={!isInteractive} value={formData.fatherName || ''} onChange={e => setFormData({...formData, fatherName: e.target.value})} className={inputCls} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <label className={labelCls}>WhatsApp / Contact No.</label>
+              <input readOnly={!isInteractive} value={formData.mobile || ''} onChange={e => setFormData({...formData, mobile: e.target.value})} className={inputCls} />
+            </div>
+          </div>
 
-This is a digitally synchronized official association letter.
-    `;
-    const blob = new Blob([content], { type: 'application/msword' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `SIP_Letter_${formData.enrollmentNo}.doc`;
-    link.click();
-  };
+          <div className="w-full">
+            <label className={labelCls}>Academic Programme / Course</label>
+            {isInteractive ? (
+              <select value={formData.programme || ''} onChange={e => setFormData({...formData, programme: e.target.value})} className={inputCls}>
+                <option value="">-- Select Programme --</option>
+                {PROGRAMMES.map(p => <option key={p} value={p}>{p}</option>)}
+              </select>
+            ) : <div className={inputCls}>{formData.programme}</div>}
+          </div>
 
-  const LetterTemplate = () => (
-    <div className="font-serif text-black opacity-100 p-4">
-      <div className="flex justify-between font-black uppercase text-[8pt] mb-8 border-b-2 border-black pb-1">
-        <span>REF NO: {currentRefNo}</span>
-        <span>DATE: {new Date().toLocaleDateString()}</span>
-      </div>
-      <h2 className="text-center font-black uppercase underline text-[16pt] mb-12 tracking-widest text-kku-blue">Internship Allotment Order</h2>
-      <div className="mb-10">
-        <p className="m-0 uppercase font-black text-[11pt]">To,</p>
-        <p className="m-0 uppercase font-black text-[11pt]">The Principal / Head of Institution,</p>
-        <p className="m-0 uppercase font-black text-[14pt] text-kku-blue mt-2 border-b border-dotted border-black inline-block">{formData.internshipSchool || '[PENDING]'}</p>
-      </div>
-      <p className="mb-10 font-black border-l-8 border-kku-blue pl-6 bg-gray-50 py-5 text-[12pt] uppercase shadow-sm">Subject: Mandatory School Internship Programme (SIP) Allotment – {formData.name}</p>
-      <div className="mb-10 text-[11.5pt] text-justify leading-relaxed">
-        Dear Sir / Madam, we hereby officially associate the under-mentioned student-teacher from K.K. University (SOETR) with your institution for the mandatory internship phase as per NCTE regulatory norms.
-      </div>
-      <div className="border-4 border-kku-blue rounded-[2rem] mb-10 shadow-xl overflow-hidden bg-white">
-         <div className="bg-kku-blue text-white px-8 py-3 font-black uppercase text-[10pt] tracking-widest">Digital Allotment Matrix</div>
-         <div className="p-8 space-y-4">
-            {[ { l: "Candidate Name", v: formData.name }, { l: "Admission ID", v: formData.enrollmentNo }, { l: "Academic Course", v: `${formData.programme} (${formData.session})` }, { l: "Internship Tenure", v: `${formData.internshipStartDate} to ${formData.internshipEndDate}` }, { l: "Faculty Observer", v: formData.internshipObserver } ].map(r => (
-              <div key={r.l} className="flex justify-between border-b border-black/5 pb-2"><span className="font-black uppercase text-[9pt] text-gray-500">{r.l}:</span><span className="font-black uppercase text-[11pt] text-kku-blue">{r.v}</span></div>
-            ))}
-         </div>
-      </div>
-      <div className="flex justify-between items-end mt-24 px-10">
-        <div className="text-center w-64">
-          <div className="h-12 border-b-2 border-black flex items-center justify-center mb-2">{officialSignatures.internshipCoordSign && <img src={officialSignatures.internshipCoordSign} className="h-full object-contain" />}</div>
-          <p className="text-[10pt] font-black uppercase text-kku-blue">SIP Coordinator</p>
+          <div className="flex w-full gap-2 md:gap-4">
+            <div className="flex-1 min-w-0">
+              <label className={labelCls}>Year</label>
+              {isInteractive ? (
+                <select value={formData.year || ''} onChange={e => setFormData({...formData, year: e.target.value})} className={inputCls}>
+                  {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+                </select>
+              ) : <div className={inputCls}>{formData.year}</div>}
+            </div>
+            <div className="flex-1 min-w-0">
+              <label className={labelCls}>Semester</label>
+              {isInteractive ? (
+                <select value={formData.semester || ''} onChange={e => setFormData({...formData, semester: e.target.value})} className={inputCls}>
+                  {availableSemesters.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              ) : <div className={inputCls}>{formData.semester}</div>}
+            </div>
+            <div className="flex-[2] min-w-0">
+              <label className={labelCls}>Official Email ID</label>
+              <input readOnly={!isInteractive} value={formData.email || ''} onChange={e => setFormData({...formData, email: e.target.value})} className={`${inputCls} normal-case`} />
+            </div>
+          </div>
+
+          <div className="w-full">
+            <label className={labelCls}>Permanent Communication Address</label>
+            <input readOnly={!isInteractive} value={formData.address || ''} onChange={e => setFormData({...formData, address: e.target.value})} className={inputCls} />
+          </div>
         </div>
-        <div className="text-center w-64">
-          <div className="h-12 border-b-2 border-black flex items-center justify-center mb-2">{officialSignatures.deanSign && <img src={officialSignatures.deanSign} className="h-full object-contain" />}</div>
-          <p className="text-[10pt] font-black uppercase text-kku-blue">Office of the Dean</p>
+
+        {/* Right Side: Photo and Signature */}
+        <div className="flex-[1] max-w-[3.6cm] shrink-0 flex flex-col gap-2 mt-6">
+          <div className="w-full h-[4.5cm] border-[1.5px] border-black flex items-center justify-center relative bg-white overflow-hidden hover:bg-gray-50 transition-colors">
+            {formData.photoUrl ? (
+              <img src={formData.photoUrl} className="w-full h-full object-cover" alt="Student Photo" />
+            ) : (
+              <span className="text-[7pt] font-black text-gray-400 text-center leading-tight">AFFIX<br/>RECENT<br/>PASSPORT<br/>PHOTO</span>
+            )}
+            {isInteractive && <input type="file" onChange={e => handleFile(e, 'photoUrl')} className="absolute inset-0 opacity-0 cursor-pointer" />}
+          </div>
+          <div className="text-[6.5pt] font-black text-center mt-[-4px]">PHOTO (3.6X4.5 CM)</div>
+
+          <div className="w-full h-[1.2cm] border-[1.5px] border-black border-dashed flex items-center justify-center relative bg-white overflow-hidden hover:bg-gray-50 transition-colors mt-2">
+            {formData.studentSignatureUrl ? (
+              <img src={formData.studentSignatureUrl} className="w-full h-full object-contain" alt="Student Signature" />
+            ) : (
+              <span className="text-[6pt] font-black text-gray-400">UPLOAD SIGNATURE</span>
+            )}
+            {isInteractive && <input type="file" onChange={e => handleFile(e, 'studentSignatureUrl')} className="absolute inset-0 opacity-0 cursor-pointer" />}
+          </div>
+          <div className="text-[6.5pt] font-black text-center mt-[-4px] border-t-[1.5px] border-black border-dotted pt-0.5">STUDENT SIGNATURE</div>
+        </div>
+      </div>
+
+      <div className="w-full h-[1.5px] bg-black my-6"></div>
+
+      {/* Internship Allotment Section */}
+      <h4 className="text-center font-black text-[12pt] uppercase underline mb-5 tracking-wide">Internship Allotment & Placement Details</h4>
+      
+      <div className="flex w-full gap-2 md:gap-8 mb-4">
+        <div className="flex-1 min-w-0">
+          <label className={labelCls}>Allotted Host School (Max 25)</label>
+          {isInteractive ? (
+            <select value={formData.internshipSchool || ''} onChange={e => handleSchoolChange(e.target.value)} className={inputCls}>
+              <option value="">-- Select Institution --</option>
+              {activeSchoolList.map(school => {
+                const count = getSchoolEnrollmentCount(school.name);
+                return <option key={school.name} value={school.name} disabled={count >= MAX_CAPACITY}>{school.name} {count >= MAX_CAPACITY ? "[LOCKED]" : ""}</option>;
+              })}
+            </select>
+          ) : <div className={`${inputCls} text-center overflow-hidden`}>{formData.internshipSchool || '_______________________'}</div>}
+        </div>
+        <div className="flex-1 min-w-0">
+          <label className={labelCls}>Assigned Academic Supervisor</label>
+          <div className="border-b-[1.5px] border-black text-[12pt] font-bold h-[32px] flex items-center justify-center bg-gray-50 overflow-hidden">
+            {formData.internshipObserver || (isInteractive ? 'Auto-assigned' : '_______________________')}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex w-full gap-2 md:gap-8 mb-6">
+        <div className="flex-1 min-w-0">
+          <label className={labelCls}>Commencement Date</label>
+          <input readOnly={!isInteractive} type="text" maxLength={10} placeholder="DD-MM-YYYY" value={formData.internshipStartDate || ''} onChange={e => setFormData({...formData, internshipStartDate: formatDate(e.target.value)})} className={`${inputCls} text-center`} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <label className={labelCls}>Completion Date</label>
+          <input readOnly={!isInteractive} type="text" maxLength={10} placeholder="DD-MM-YYYY" value={formData.internshipEndDate || ''} onChange={e => setFormData({...formData, internshipEndDate: formatDate(e.target.value)})} className={`${inputCls} text-center`} />
+        </div>
+      </div>
+
+      <div className="border-[1.5px] border-black p-4 bg-white text-[10.5pt] italic text-center font-bold leading-tight mb-8">
+        "I hereby solemnly declare to abide by the institutional norms of the allotted school."
+      </div>
+
+      {/* Footer Signatures */}
+      <div className="flex justify-between items-end mt-12 px-2 md:px-6">
+        <div className="flex flex-col items-center">
+          <div className="text-center mb-6">
+            <div className="w-[3.6cm] h-[1.2cm] border-[1.5px] border-black border-dashed flex items-center justify-center relative bg-white overflow-hidden">
+              {formData.studentSignatureUrl ? (
+                <img src={formData.studentSignatureUrl} className="w-full h-full object-contain" alt="Student Signature" />
+              ) : (
+                <span className="text-[6pt] font-black text-gray-400">UPLOAD SIGNATURE</span>
+              )}
+              {isInteractive && <input type="file" onChange={e => handleFile(e, 'studentSignatureUrl')} className="absolute inset-0 opacity-0 cursor-pointer" />}
+            </div>
+            <div className="text-[8pt] font-black border-t-[1.5px] border-black pt-0.5 mt-1 uppercase">Signature of Candidate</div>
+          </div>
+          <div className="text-center">
+            <input readOnly={!isInteractive} type="text" maxLength={10} placeholder="DD-MM-YYYY" value={formData.formDate || ''} onChange={e => setFormData({...formData, formDate: formatDate(e.target.value)})} className="w-28 border-b-[1.5px] border-black font-bold text-[11pt] pb-1 focus:outline-none text-center bg-transparent" />
+            <p className="text-[9pt] font-black uppercase mt-1">Date</p>
+          </div>
+        </div>
+        <div className="flex flex-col space-y-6 md:space-y-10">
+          <PreAffixedSign label={"INTERNSHIP COORDINATOR"} signUrl={officialSignatures.internshipCoordSign} />
+          <PreAffixedSign label={"DEAN (SOETR)"} signUrl={officialSignatures.deanSign} />
         </div>
       </div>
     </div>
   );
 
-  if (view === 'verify' || view === 'success') {
-    return (
-      <div className="min-h-screen bg-gray-200 py-10 flex flex-col items-center px-4 animate-fadeIn">
-        {view === 'verify' && (
-          <div className="w-full max-w-[210mm] mb-8 flex flex-col md:flex-row justify-between items-center bg-white p-8 rounded-3xl shadow-2xl border-4 border-kku-gold sticky top-4 z-50">
-             <div><h3 className="text-2xl font-black uppercase text-kku-blue">SIP Record Verification</h3><p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Review school association and tenure cycles</p></div>
-             <div className="flex gap-4 mt-6 md:mt-0"><button onClick={() => setView('entry')} className="bg-gray-100 text-black px-8 py-3 rounded-2xl font-black uppercase text-xs border-2 border-black">Modify</button><button onClick={handleFinalSubmit} disabled={isSaving} className="bg-green-700 text-white px-10 py-3 rounded-2xl font-black uppercase text-xs border-2 border-white shadow-xl flex items-center gap-4">{isSaving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : 'Register SIP'}</button></div>
-          </div>
-        )}
-        {view === 'success' && (
-          <div className="w-full max-w-[210mm] mb-8 flex flex-col md:flex-row justify-between items-center bg-green-700 text-white p-10 rounded-[3rem] shadow-2xl border-4 border-white sticky top-4 z-50">
-             <div className="text-center md:text-left"><h3 className="text-4xl font-serif font-black uppercase">SIP Allotment Secured</h3><p className="text-green-100 font-bold uppercase text-[11px] tracking-[0.4em] mt-2">REFERENCE ID: {currentRefNo}</p></div>
-             <div className="flex gap-4 mt-8 md:mt-0"><button onClick={() => window.print()} className="bg-white text-green-800 px-10 py-4 rounded-3xl font-black uppercase text-xs border-2 border-green-800 shadow-xl flex items-center gap-3"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4 4m4 4V4" /></svg> Download PDF</button><button onClick={downloadWord} className="bg-blue-600 text-white px-8 py-4 rounded-3xl font-black uppercase text-xs border-2 border-white shadow-xl">Word (.doc)</button><button onClick={() => navigate('/')} className="bg-black/20 text-white px-8 py-4 rounded-3xl font-black uppercase text-xs hover:bg-white hover:text-green-800 transition">Hub Home</button></div>
-          </div>
-        )}
-        <A4FormWrapper title="Official SIP Allotment Registry" pages={[{ title: "SIP Allotment Artifact", content: <LetterTemplate />, refNo: currentRefNo, copyType: "Official Letter" }]} />
+  const pages: A4Page[] = [
+    { title: "SIP Allotment - Student Copy", copyType: "Page 1 of 3", refNo: currentRefNo, content: (
+      <div className="relative w-full h-full flex flex-col justify-between">
+        {renderFormContent(true)}
+        
+        {/* FIXED BUG 2: Added a robust Save & Submit Button pinned perfectly inside the document flow */}
+        <div className="mt-6 flex justify-center no-print w-full pb-4">
+           <button type="button" onClick={handleSub} className="w-[90%] py-3 bg-[#001F3F] text-white rounded-[1rem] font-black uppercase tracking-widest shadow-lg border-2 border-black hover:bg-black transition-all text-[11px] md:text-[14px] flex items-center justify-center gap-3">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+              Submit & Save Registry
+           </button>
+        </div>
       </div>
-    );
-  }
-
-  const labelCls = "block text-[10px] font-black uppercase tracking-widest text-black mb-1.5 opacity-100";
-  const inputCls = "w-full border-2 border-black p-3 font-bold uppercase rounded-xl outline-none focus:ring-4 focus:ring-kku-gold/10 bg-white text-black opacity-100 placeholder-gray-400 shadow-sm transition-all hover:border-kku-blue";
+    )},
+    { title: "SIP Allotment - Institute Copy", copyType: "Page 2 of 3", refNo: currentRefNo, content: (
+      renderFormContent(false)
+    )},
+    { title: "Internship School Principal Copy", copyType: "Page 3 of 3", refNo: currentRefNo, content: (
+      <div className="font-serif leading-relaxed px-6 pt-4 text-[12pt] font-bold opacity-100">
+        <div className="flex justify-between font-black border-b-[1.5px] border-black mb-10 pb-1">
+          <span>REF: {currentRefNo}</span>
+          <span>DATE: {formData.formDate || 'DD-MM-YYYY'}</span>
+        </div>
+        <div className="mb-10">
+          <p className="font-black text-[13pt] uppercase mb-1">To,</p>
+          <p className="font-black text-[12pt] uppercase underline mb-1">The Principal / Headmaster,</p>
+          <p className="text-[16pt] font-black uppercase text-blue-900 leading-tight mb-1">{formData.internshipSchool || '_______________________'}</p>
+          <p className="text-[10pt] font-black uppercase text-gray-500 italic">Subject: Internship Placement Request</p>
+        </div>
+        <h3 className="text-center text-[14pt] font-black underline my-10 uppercase tracking-tight">Subject: Request for School Internship (SIP) Permission</h3>
+        <p className="mb-8">Respected Sir/Madam,</p>
+        <div className="space-y-8 text-justify leading-relaxed mb-12">
+          <p className="indent-12">The School of Education Training & Research (SOETR), K.K. University, introduces our trainee-student <span className="border-b-[1.5px] border-black px-4 uppercase font-black text-blue-900">{formData.name || '________________'}</span> pursuing {formData.programme || '_______'} for the session {formData.session || '_______'}.</p>
+          <p className="indent-12">As per NCTE norms, the student is required to complete SIP in a recognized school. We have allotted this student to your institution from <b>{formData.internshipStartDate || 'DD-MM-YYYY'}</b> to <b>{formData.internshipEndDate || 'DD-MM-YYYY'}</b>. We request you to kindly provide the necessary guidance and facilities to the student during this period.</p>
+        </div>
+        <div className="mt-24 flex justify-between items-end">
+          <div className="text-center">
+             <div className="w-[3.6cm] h-[1.2cm] border-[1.5px] border-black border-dashed flex items-center justify-center relative bg-white overflow-hidden mx-auto mb-1">
+                {formData.studentSignatureUrl ? <img src={formData.studentSignatureUrl} className="w-full h-full object-contain" /> : <span className="text-[6pt] font-black text-gray-400">SIGNATURE</span>}
+             </div>
+             <p className="text-[8pt] font-black uppercase mt-1 border-t-[1.5px] border-black pt-0.5">Signature of Student</p>
+             <div className="mt-10 border-2 border-black border-dashed p-4 w-48 h-24 flex items-center justify-center text-center">
+                <p className="text-[8pt] font-black uppercase text-gray-400">Official Seal of Host School</p>
+             </div>
+          </div>
+          <div className="flex flex-col space-y-10">
+             <PreAffixedSign label={"Internship Coordinator"} signUrl={officialSignatures.internshipCoordSign} />
+             <PreAffixedSign label={"DEAN (SOETR)"} signUrl={officialSignatures.deanSign} />
+          </div>
+        </div>
+      </div>
+    )}
+  ];
 
   return (
-    <div className="min-h-screen bg-gray-100 py-12 px-4 md:px-8">
-      <div className="max-w-6xl mx-auto bg-white border-2 border-black rounded-[5rem] shadow-[40px_40px_0_rgba(0,31,63,1)] overflow-hidden">
-        <div className="bg-kku-blue text-white p-12 md:p-20 flex flex-col md:flex-row justify-between items-center relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-white opacity-5 rounded-full -mr-32 -mt-32 blur-3xl"></div>
-          <div className="relative z-10 text-center md:text-left"><h1 className="text-5xl md:text-7xl font-serif font-black uppercase tracking-tighter leading-none m-0">SIP Allotment</h1><p className="text-kku-gold font-bold uppercase text-[11px] mt-6 tracking-[0.4em] bg-white/10 px-8 py-2 rounded-full inline-block">Official Internship Gateway</p></div>
-          <button onClick={() => navigate('/')} className="relative z-10 bg-white/10 border-2 border-white/20 px-8 py-4 rounded-[2rem] font-black uppercase text-[10px] tracking-widest hover:bg-red-700 transition-all">Cancel Application</button>
-        </div>
-
-        <form onSubmit={handleInitialVerify} className="p-8 md:p-24 space-y-16">
-          <div className="flex flex-col lg:flex-row gap-16">
-            <div className="flex-1 space-y-10">
-               <div><label className={labelCls}>Name of Candidate (Legal)</label><input required value={formData.name || ''} onChange={e => setFormData({...formData, name: e.target.value})} className={inputCls} placeholder="ENTER FULL NAME" /></div>
-               <div className="grid grid-cols-2 gap-8">
-                  <div><label className={labelCls}>Admission ID</label><input required value={formData.enrollmentNo || ''} onChange={e => setFormData({...formData, enrollmentNo: e.target.value})} className={inputCls} placeholder="KKU/SOETR/XXXX" /></div>
-                  <div><label className={labelCls}>Academic Course</label><select value={formData.programme} onChange={e => setFormData({...formData, programme: e.target.value})} className={inputCls}>{PROGRAMMES.map(p => <option key={p} value={p}>{p}</option>)}</select></div>
-               </div>
-               <div className="bg-kku-blue/5 p-10 rounded-[3rem] border-2 border-dashed border-kku-blue/20">
-                  <h4 className="text-sm font-black uppercase text-kku-blue mb-6 tracking-widest">Active School Association</h4>
-                  <div className="space-y-6">
-                    <div><label className={labelCls}>Target Internship Institution</label><select required value={formData.internshipSchool || ''} onChange={e => handleSchoolChange(e.target.value)} className={inputCls}><option value="">-- SELECT INSTITUTION --</option>{activeSchoolList.map(s => { const c = getSchoolEnrollmentCount(s.name); return <option key={s.name} value={s.name} disabled={c >= MAX_CAPACITY}>{s.name} ({MAX_CAPACITY-c} Slots Available)</option> })}</select></div>
-                    <div className="flex justify-between items-center bg-white p-5 rounded-2xl border-2 border-black/5 shadow-inner"><span className="text-[10px] font-black text-gray-400 uppercase">Faculty Observer:</span><span className="font-black text-kku-blue uppercase tracking-widest">{formData.internshipObserver || 'AUTOMATIC ALLOTMENT'}</span></div>
-                  </div>
-               </div>
-            </div>
-            <div className="w-full lg:w-80 flex flex-col items-center">
-               <div className="w-56 h-72 border-4 border-black rounded-[2rem] overflow-hidden bg-gray-50 flex items-center justify-center relative shadow-2xl group transition-transform hover:scale-105">
-                  {formData.photoUrl ? <img src={formData.photoUrl} className="w-full h-full object-cover" /> : <div className="text-center p-6"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-12 h-12 mx-auto mb-4 text-gray-200"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg><p className="text-[8pt] font-black text-gray-400 uppercase tracking-widest">Identity Artifact<br/>(4x6 cm)</p></div>}
-                  <input type="file" required onChange={handlePhoto} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
-               </div>
-               <div className="mt-12 space-y-8 w-full">
-                  <div><label className={labelCls}>Internship Commencement</label><input type="date" required value={formData.internshipStartDate || ''} onChange={e => setFormData({...formData, internshipStartDate: e.target.value})} className={inputCls} /></div>
-                  <div><label className={labelCls}>Internship Conclusion</label><input type="date" required value={formData.internshipEndDate || ''} onChange={e => setFormData({...formData, internshipEndDate: e.target.value})} className={inputCls} /></div>
-               </div>
-            </div>
-          </div>
-          <div className="mt-32 pt-20 border-t-8 border-dotted border-gray-100 flex flex-col items-center">
-             <button type="submit" className="w-full max-w-4xl py-12 bg-kku-blue text-white rounded-[4rem] font-black uppercase tracking-[0.4em] shadow-[0_30px_80px_rgba(0,31,63,0.3)] border-[2mm] border-white hover:bg-black transition-all text-[20pt] flex items-center justify-center gap-10 group transform active:scale-95">Verify & Generate Registry Entry<svg className="w-8 h-8 transition-transform group-hover:translate-x-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg></button>
-             <p className="mt-12 text-[11px] font-black uppercase text-gray-400 text-center tracking-widest leading-relaxed max-w-2xl">Upon verification, your SIP allotment will be synchronized with the master database and an official letter artifact will be generated with authorized seals.</p>
-          </div>
-        </form>
-      </div>
+    <div className="relative pb-10 w-full overflow-x-hidden">
+       <A4FormWrapper validate={validate} pages={pages} title="SIP_Dispatch_Letter_Pack" />
     </div>
   );
 };
