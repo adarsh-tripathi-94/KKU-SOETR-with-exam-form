@@ -60,7 +60,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       {/* Floating Feedback Button */}
       {isFeedbackOpen && (
         <a 
-          href="https://6984b4fa129d0152d3f722cf--precious-treacle-692682.netlify.app/" 
+          href="https://kk-university-feedback-portal.ramayanyug.workers.dev"
           target="_blank"
           rel="noopener noreferrer"
           className="fixed right-0 top-1/2 -translate-y-1/2 bg-[#001F3F] text-white font-black py-5 px-2 shadow-[-4px_0_20px_rgba(0,0,0,0.3)] rounded-l-xl hover:bg-[#0A2D5C] hover:px-3 transition-all duration-300 z-50 flex items-center justify-center no-print border-l-4 border-y-2 border-kku-gold group hidden sm:flex"

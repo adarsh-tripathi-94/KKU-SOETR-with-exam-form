@@ -60,7 +60,6 @@ const DataDrivenView = ({ title, category }: { title: string, category: string }
     <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-[70vh]">
       <div className="bg-white rounded-[2rem] md:rounded-[3rem] shadow-2xl border-4 border-kku-blue overflow-hidden">
         
-        /* FIXED: Changed flex to stack on mobile (flex-col), reduced text size, and reduced padding */
         <div className="bg-kku-blue text-white p-6 md:p-12 border-b-8 border-kku-gold flex flex-col md:flex-row gap-6 justify-between items-center text-center md:text-left">
           <div>
             <h1 className="text-2xl md:text-4xl font-serif font-black tracking-widest uppercase">{title}</h1>
@@ -68,9 +67,7 @@ const DataDrivenView = ({ title, category }: { title: string, category: string }
           </div>
           <button onClick={() => navigate(-1)} className="bg-white text-kku-blue w-full md:w-auto px-8 py-3 rounded-2xl font-black text-xs uppercase tracking-widest border-2 border-white hover:bg-black hover:text-white transition shadow-xl">Exit Hub</button>
         </div>
-
-        /* FIXED: Reduced padding from p-10 to p-6 */
-        <div className="p-6 md:p-10 bg-gray-50 border-b-2 border-black/5">
+          <div className="p-6 md:p-10 bg-gray-50 border-b-2 border-black/5">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
             <div>
               <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Academic Programme</label>

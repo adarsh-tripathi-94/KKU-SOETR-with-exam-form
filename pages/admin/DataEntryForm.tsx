@@ -1,13 +1,17 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { PersonDomain, DataEntryRecord, AttendanceRecord, PracticalFileStatus, ParticipationStatus } from '../../types';
 import { PROGRAMMES, SESSIONS, MONTHS } from '../../constants';
 import { A4FormWrapper } from '../../components/A4FormWrapper';
 
 export const DataEntryForm: React.FC = () => {
-  const { addDataRecord } = useAuth();
+  const location = useLocation();
+  const editData = location.state?.editData as DataEntryRecord | undefined;
+  
+  const { addDataRecord, updateDataRecord } = useAuth();
+  const [editId, setEditId] = useState<string | null>(null);
   const navigate = useNavigate();
   const [domain, setDomain] = useState<PersonDomain>(PersonDomain.STUDENT);
   const [isSaving, setIsSaving] = useState(false);
@@ -75,6 +79,21 @@ export const DataEntryForm: React.FC = () => {
     }
   }, []);
 
+  useEffect(() => {
+    if (editData) {
+      setEditId(editData.id);
+      setDomain(editData.domain);
+      setBasicInfo(editData.basicInfo);
+      if (editData.attendance1) setAtt1(editData.attendance1);
+      if (editData.attendance2) setAtt2(editData.attendance2);
+      if (editData.practical1) setPrac1(editData.practical1);
+      if (editData.practical2) setPrac2(editData.practical2);
+      if (editData.communityOutreach1) setOutreach(editData.communityOutreach1);
+      if (editData.examinations1) setExams(editData.examinations1);
+      if (editData.sports) setSports(editData.sports);
+    }
+  }, [editData]);
+
   const saveDraft = () => {
     const draft = { basicInfo, domain, att1, att2, prac1, prac2, outreach, exams, sports, qualifications, achievements, adminWorks, evalData, ntQuals, ntTechnical, ntResponsibilities };
     localStorage.setItem('soetr_admin_entry_draft', JSON.stringify(draft));
@@ -108,35 +127,62 @@ export const DataEntryForm: React.FC = () => {
     return errs;
   };
 
-  const handleSave = async () => {
-    const errs = validate();
-    if (errs.length > 0) {
-      setValidationErrors(errs);
-      window.scrollTo(0, 0);
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // 1. Validate mandatory basic info
+    if (!basicInfo.enrollmentNo || !basicInfo.name || !basicInfo.programme) {
+      alert("Missing mandatory fields: Enrollment Number, Name, and Programme are required.");
       return;
     }
 
-    if (!window.confirm("Verify Master Data Integrity? This action will permanently synchronize the institutional repository for this personnel.")) return;
+    if (!window.confirm(editId ? "Update existing student dossier?" : "Initialize new student registration?")) return;
 
     setIsSaving(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // Simulate gateway processing time for UI effect
+    await new Promise(res => setTimeout(res, 1500)); 
 
     const record: DataEntryRecord = {
-      id: Date.now().toString(), domain,
-      basicInfo: { ...basicInfo },
-      attendance1: att1, attendance2: att2, practical1: prac1, practical2: prac2,
-      communityOutreach1: outreach, examinations1: exams, sports, qualifications,
-      academicAchievements: { researchPapers: achievements.researchPapers, workshops: achievements.workshops, booksWritten: achievements.booksWritten, educationalApps: achievements.apps },
-      adminWork: { academicContribution: adminWorks.contribution, mentor: adminWorks.mentor, coCurricular: adminWorks.coCurricular, examination: adminWorks.examContr },
-      evaluation: { practicalFiles: evalData.practicalFiles, ctScripts: evalData.ctScripts, yearlyScripts: evalData.yearlyScripts, assignments: evalData.assignments, studentRegisters: evalData.studentRegisters, facultyRegisters: evalData.facultyRegisters },
-      technicalAchievements: ntTechnical, otherResponsibilities: ntResponsibilities
+      id: editId || '', 
+      domain,
+      basicInfo,
+      attendance1: att1,
+      attendance2: att2,
+      practical1: prac1,
+      practical2: prac2,
+      communityOutreach1: outreach,
+      examinations1: exams,
+      sports,
+      qualifications: [] as any,
+      academicAchievements: {} as any,
+      adminWork: {} as any,
+      evaluation: {} as any,
+      technicalAchievements: {} as any,
+      otherResponsibilities: [] as any
     };
 
-    addDataRecord(record);
-    localStorage.removeItem('soetr_admin_entry_draft');
-    setIsSaving(false);
-    alert("Database Synchronized Successfully.");
-    navigate('/admin-dashboard');
+    try {
+      if (editId) {
+        // IF EDITING: Update the existing record
+        if (updateDataRecord) {
+           await updateDataRecord(editId, record);
+        } else {
+           throw new Error("updateDataRecord function is missing from AuthContext");
+        }
+      } else {
+        // IF NEW: Insert a brand new record
+        await addDataRecord(record);
+      }
+      
+      alert(`Master Registry ${editId ? 'Updated' : 'Synchronized'} Successfully!`);
+      navigate('/admin-dashboard');
+    } catch (err) {
+      console.error(err);
+      alert("Failed to synchronize with Master Registry.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const inputCls = "mt-1 block w-full border-2 border-black p-3 font-black uppercase focus:ring-4 focus:ring-kku-gold/20 outline-none rounded-2xl text-sm bg-white shadow-sm transition-all";
@@ -226,11 +272,11 @@ export const DataEntryForm: React.FC = () => {
             <div className="space-y-6">
               <div><label className={labelCls}>Enrollment No (Admission ID)</label><input value={basicInfo.enrollmentNo} onChange={e => setBasicInfo({...basicInfo, enrollmentNo: e.target.value})} className={inputCls} placeholder="KKU/SOETR/..." /></div>
               <div><label className={labelCls}>Full Legal Name</label><input value={basicInfo.name} onChange={e => setBasicInfo({...basicInfo, name: e.target.value})} className={inputCls} /></div>
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 w-full">
                 <div><label className={labelCls}>Father's Name</label><input value={basicInfo.fatherName} onChange={e => setBasicInfo({...basicInfo, fatherName: e.target.value})} className={inputCls} /></div>
                 <div><label className={labelCls}>Mother's Name</label><input value={basicInfo.motherName} onChange={e => setBasicInfo({...basicInfo, motherName: e.target.value})} className={inputCls} /></div>
               </div>
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 w-full">
                 <div><label className={labelCls}>Programme</label><select value={basicInfo.programme} onChange={e => setBasicInfo({...basicInfo, programme: e.target.value})} className={inputCls}>{PROGRAMMES.map(p => <option key={p} value={p}>{p}</option>)}</select></div>
                 <div><label className={labelCls}>Session</label><select value={basicInfo.session} onChange={e => setBasicInfo({...basicInfo, session: e.target.value})} className={inputCls}>{SESSIONS.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
               </div>
@@ -243,7 +289,7 @@ export const DataEntryForm: React.FC = () => {
                   </div>
                   <p className="mt-4 text-[9px] font-black uppercase text-gray-400 tracking-widest">Institutional Digital Asset</p>
                </div>
-               <div className="grid grid-cols-2 gap-6">
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 w-full">
                   <div><label className={labelCls}>Mobile No</label><input value={basicInfo.contact1} onChange={e => setBasicInfo({...basicInfo, contact1: e.target.value})} className={inputCls} /></div>
                   <div><label className={labelCls}>WhatsApp ID</label><input value={basicInfo.whatsapp} onChange={e => setBasicInfo({...basicInfo, whatsapp: e.target.value})} className={inputCls} /></div>
                </div>
@@ -266,7 +312,27 @@ export const DataEntryForm: React.FC = () => {
                            <tr key={m.month} className="border-b border-black/10 hover:bg-gray-50 transition-colors">
                              <td className="p-4 bg-gray-50 border-r border-black/10">{m.month}</td>
                              <td className="p-4 text-center border-r border-black/10">{m.workingDays}</td>
-                             <td className="p-0 border-r border-black/10"><input type="number" value={m.presentDays} onChange={e => { const arr = yIdx === 0 ? [...att1] : [...att2]; const val = Math.min(Number(e.target.value), m.workingDays); arr[i].presentDays = val; arr[i].percentage = Math.round((val / m.workingDays) * 100); yIdx === 0 ? setAtt1(arr) : setAtt2(arr); }} className="w-full h-full p-4 text-center font-black outline-none bg-blue-50/20" /></td>
+                             <td className="p-0 border-r border-black/10">
+                             <select 
+                                value={m.presentDays} 
+                                onChange={e => { 
+                                  const arr = yIdx === 0 ? [...att1] : [...att2]; 
+                                  const val = e.target.value;
+                                  if (val === 'N/A') {
+                                    arr[i].presentDays = 'N/A';
+                                    arr[i].percentage = 'N/A';
+                                  } else {
+                                    const numVal = Math.min(Number(val), m.workingDays);
+                                    arr[i].presentDays = numVal;
+                                    arr[i].percentage = Math.round((numVal / m.workingDays) * 100);
+                                  }
+                                  yIdx === 0 ? setAtt1(arr) : setAtt2(arr); 
+                                }} 
+                                className="w-full h-full p-4 text-center font-black outline-none bg-blue-50/20 appearance-none cursor-pointer"
+                                >
+                                  <                               option value="N/A">N/A</option>
+                                    {[...Array(m.workingDays + 1).keys()].map(n => <option key={n} value={n}>{n}</option>)}
+                                  </select></td>                                
                              <td className="p-4 text-center text-kku-blue font-black">{m.percentage}%</td>
                            </tr>
                          ))}

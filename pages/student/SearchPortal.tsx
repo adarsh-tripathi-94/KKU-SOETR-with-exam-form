@@ -189,7 +189,7 @@ export const SearchPortal: React.FC = () => {
                 <input type="password" required value={credentials.password} onChange={e => setCredentials({...credentials, password: e.target.value})} className={inputCls} placeholder="••••••••" />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 w-full">
               <button type="button" onClick={() => setLoginStep('selection')} className="w-full p-5 border-2 border-black font-black uppercase text-xs rounded-2xl hover:bg-gray-50 transition-all">Cancel</button>
               <button type="submit" className="w-full p-5 bg-kku-blue text-white font-black uppercase text-xs rounded-2xl shadow-2xl hover:bg-black transition-all border-2 border-kku-blue">Authorize</button>
             </div>

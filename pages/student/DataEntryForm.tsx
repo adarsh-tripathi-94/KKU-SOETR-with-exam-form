@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { StudentFormData, EducationalDetail } from '../../types';
@@ -39,6 +38,8 @@ export const DataEntryForm: React.FC = () => {
     email: '',
     address: '',
     pinCode: '',
+    city: '',
+    state: '',
     photoUrl: '',
     eduDetails: INITIAL_EDU_DETAILS
   });
@@ -62,6 +63,38 @@ export const DataEntryForm: React.FC = () => {
       }));
     }
   }, [formData.programme]);
+
+  // --- PIN CODE AUTO-DETECT LOGIC ---
+  useEffect(() => {
+    const fetchLocationData = async () => {
+      // Indian PIN codes are exactly 6 digits.
+      if (formData.pinCode && formData.pinCode.length === 6) {
+        try {
+          const response = await fetch(`https://api.postalpincode.in/pincode/${formData.pinCode}`);
+          const data = await response.json();
+
+          if (data[0].Status === "Success") {
+            const location = data[0].PostOffice[0];
+            setFormData(prev => ({
+              ...prev,
+              city: location.District,
+              state: location.State
+            }));
+          } else {
+            console.warn("Invalid PIN Code entered");
+            setFormData(prev => ({ ...prev, city: '', state: '' })); // Clear if invalid
+          }
+        } catch (error) {
+          console.error("Failed to fetch PIN code data", error);
+        }
+      } else if (formData.pinCode && formData.pinCode.length < 6) {
+         // Clear fields if user deletes digits
+         setFormData(prev => ({ ...prev, city: '', state: '' }));
+      }
+    };
+
+    fetchLocationData();
+  }, [formData.pinCode]);
 
   const availableSessions = useMemo(() => getSessionsForProgramme(formData.programme || 'B.Ed.'), [formData.programme]);
   const availableYears = useMemo(() => getYearsForProgramme(formData.programme || 'B.Ed.'), [formData.programme]);
@@ -122,7 +155,10 @@ export const DataEntryForm: React.FC = () => {
     content += `Contact: ${formData.mobile}\n`;
     content += `WhatsApp: ${formData.whatsapp}\n`;
     content += `Email: ${formData.email}\n`;
-    content += `Address: ${formData.address}\n\n`;
+    content += `Address: ${formData.address}\n`;
+    content += `PIN Code: ${formData.pinCode}\n`;
+    content += `City: ${formData.city}\n`;
+    content += `State: ${formData.state}\n\n`;
     content += `SECTION 2: EDUCATIONAL DETAILS\n`;
     formData.eduDetails?.forEach(edu => {
       content += `${edu.programme}: Year ${edu.year}, Subject ${edu.subject}, Board ${edu.board}, Result ${edu.result}%\n`;
@@ -163,7 +199,7 @@ export const DataEntryForm: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-200 py-10 flex flex-col items-center font-serif text-black overflow-x-hidden">
       {/* High-Impact Digital Form Container */}
-      <div className="bg-white shadow-2xl border-[1.5mm] border-[#001F3F] p-[5mm] md:p-[10mm] w-full max-w-[210mm] min-h-[297mm] box-border relative overflow-hidden">
+      <div className="bg-white shadow-2xl border-[1.5mm] border-[#001F3F] p-4 md:p-[10mm] w-full max-w-full md:max-w-[210mm] min-h-[297mm] box-border relative overflow-hidden">
         
         {/* Header Section */}
         <div className="flex items-center justify-between mb-2">
@@ -201,7 +237,7 @@ export const DataEntryForm: React.FC = () => {
                 <div><label className={labelCls}>Mother's Name</label><input required value={formData.motherName || ''} onChange={e => setFormData({...formData, motherName: e.target.value})} className={inputCls} placeholder="ENTER MOTHER'S NAME" /></div>
                 <div><label className={labelCls}>Student Admission ID</label><input required value={formData.enrollmentNo || ''} onChange={e => setFormData({...formData, enrollmentNo: e.target.value})} className={inputCls} placeholder="KKU/SOETR/XXXX" /></div>
                 
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 w-full">
                    <div>
                      <label className={labelCls}>Programme</label>
                      <select value={formData.programme} onChange={e => setFormData({...formData, programme: e.target.value})} className={inputCls}>
@@ -216,7 +252,7 @@ export const DataEntryForm: React.FC = () => {
                    </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 w-full">
                    <div>
                      <label className={labelCls}>Academic Year</label>
                      <select value={formData.year} onChange={e => setFormData({...formData, year: e.target.value})} className={inputCls}>
@@ -263,9 +299,21 @@ export const DataEntryForm: React.FC = () => {
                  <label className={labelCls}>Residential Postal Address</label>
                  <textarea required value={formData.address || ''} onChange={e => setFormData({...formData, address: e.target.value})} className={`${inputCls} h-24 normal-case p-4`} placeholder="COMPLETE PHYSICAL ADDRESS..." />
                </div>
-               <div>
-                 <label className={labelCls}>Pin Code</label>
-                 <input required maxLength={6} value={formData.pinCode || ''} onChange={e => setFormData({...formData, pinCode: e.target.value})} className={inputCls} placeholder="6-DIGIT PIN" />
+               
+               {/* UPDATED: Postal Code Auto-Detect Row */}
+               <div className="md:col-span-2 grid grid-cols-3 gap-4">
+                 <div>
+                   <label className={labelCls}>Pin Code</label>
+                   <input required maxLength={6} value={formData.pinCode || ''} onChange={e => setFormData({...formData, pinCode: e.target.value.replace(/\D/g, '')})} className={inputCls} placeholder="6-DIGIT PIN" />
+                 </div>
+                 <div>
+                   <label className={labelCls}>City / District</label>
+                   <input readOnly value={formData.city || ''} className={`${inputCls} bg-gray-100 cursor-not-allowed text-gray-500`} placeholder="AUTO-DETECT" />
+                 </div>
+                 <div>
+                   <label className={labelCls}>State</label>
+                   <input readOnly value={formData.state || ''} className={`${inputCls} bg-gray-100 cursor-not-allowed text-gray-500`} placeholder="AUTO-DETECT" />
+                 </div>
                </div>
             </div>
           </section>

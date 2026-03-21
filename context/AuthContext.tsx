@@ -1,6 +1,8 @@
 
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import { User, Role, AdminRole, DataEntryRecord, AdminUser, OfficialSignatures, UploadedContent, FormTimeline, GalleryImage, GoverningBodyMember, MockSubmission } from '../types';
+import { supabase } from '../supabaseClient';
+import seminarImg from '../pages/student/seminar.png';
 
 const INITIAL_TIMELINES: FormTimeline[] = [
   { formId: 'notice-board', formName: 'Notice Board', startDate: '01-01-2024', endDate: '31-12-2030', isActive: true },
@@ -18,20 +20,11 @@ const INITIAL_TIMELINES: FormTimeline[] = [
   { formId: 'governing-body', formName: 'Leadership Section', startDate: '01-01-2024', endDate: '31-12-2030', isActive: true }
 ];
 
-const DEFAULT_GOVERNING: GoverningBodyMember[] = [
-  { 
-    id: 'gb1', 
-    name: "Er. Ravi Chaudhary", 
-    title: "Hon'ble Chancellor", 
-    image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=300&h=300", 
-    description: "Our mission is to cultivate a learning environment where innovation meets tradition. We are dedicated to producing educators who will inspire, lead, and contribute meaningfully to the global academic landscape." 
-  }
-];
 
 const DEFAULT_GALLERY: GalleryImage[] = [
   { id: 'gal1', url: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&q=80&w=1600&h=800', title: 'Micro-Teaching Sessions', description: 'Developing core pedagogical competencies through structured peer-teaching cycles.' },
   { id: 'gal2', url: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=1600&h=800', title: 'Interactive Group Discussions', description: 'Fostering collaborative learning and critical analysis of educational theories.' },
-  { id: 'gal3', url: 'https://images.unsplash.com/photo-1475721027466-2c6ee078fd2f?auto=format&fit=crop&q=80&w=1600&h=800', title: 'Seminar Presentations', description: 'Building professional confidence and mastery through scholarly academic discourse.' }
+  { id: 'gal3', url: seminarImg, title: 'Seminar Presentations', description: 'Building professional confidence and mastery through scholarly academic discourse.' }
 ];
 
 interface AuthContextType {
@@ -64,6 +57,8 @@ interface AuthContextType {
   markSubmissionAsRead: (id: string) => void;
   generateRefNo: () => string;
   getSchoolEnrollmentCount: (schoolName: string) => number;
+  verifyStudentExists: (enrollmentNo: string) => Promise<boolean>;
+  updateDataRecord: (id: string, record: DataEntryRecord) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -77,39 +72,82 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [uploadedContent, setUploadedContent] = useState<UploadedContent[]>([]);
   const [formTimelines, setFormTimelines] = useState<FormTimeline[]>(INITIAL_TIMELINES);
   const [officialSignatures, setOfficialSignatures] = useState<OfficialSignatures>({});
-  const [governingBody, setGoverningBody] = useState<GoverningBodyMember[]>(DEFAULT_GOVERNING);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>(DEFAULT_GALLERY);
   const [submissions, setSubmissions] = useState<MockSubmission[]>([]);
   const [refCounter, setRefCounter] = useState(1);
 
   useEffect(() => {
-    const load = (key: string, setter: Function, defaultValue: any) => {
-      const s = localStorage.getItem(key);
-      if (s) {
-        try { 
-          const parsed = JSON.parse(s);
-          if (parsed && (Array.isArray(parsed) || typeof parsed === 'object' || typeof parsed === 'number')) {
-            setter(parsed);
-          } else {
-            setter(defaultValue);
-          }
-        } catch(e) {
-          setter(defaultValue);
-        }
-      } else {
-        localStorage.setItem(key, JSON.stringify(defaultValue));
-        setter(defaultValue);
+    const fetchLiveDatabase = async () => {
+    try {
+      // 1. Fetch Master Student Records
+      const { data: studentsData, error: studentError } = await supabase.from('students_registry').select('*');
+      if (studentError) throw studentError;
+      
+      if (studentsData) {
+        const mappedStudents: DataEntryRecord[] = studentsData.map(dbRow => ({
+          id: dbRow.id,
+          domain: dbRow.domain || 'Student',
+          basicInfo: {
+            enrollmentNo: dbRow.enrollment_no || '',
+            name: dbRow.name || '',
+            fatherName: dbRow.father_name || '',
+            motherName: dbRow.mother_name || '',
+            programme: dbRow.programme || '',
+            session: dbRow.academic_session || '',
+            year: dbRow.academic_year || '',
+            semester: dbRow.semester || '',
+            contact1: dbRow.mobile || '',
+            whatsapp: dbRow.whatsapp || '',
+            email: dbRow.email || '',
+            address: dbRow.address || '',
+            pinCode: dbRow.pin_code || '',
+            photoUrl: dbRow.photo_url || '',
+            eduDetails: dbRow.edu_details || []
+          },
+          ...(dbRow.extended_data || {}) // Safely expands attendance & practicals!
+        }));
+        setDataRecords(mappedStudents);
       }
-    };
 
-    load('soetr_data_records', setDataRecords, []);
-    load('soetr_timelines', setFormTimelines, INITIAL_TIMELINES);
-    load('soetr_uploads', setUploadedContent, []);
-    load('official_signatures', setOfficialSignatures, {});
-    load('soetr_governance', setGoverningBody, DEFAULT_GOVERNING);
-    load('soetr_gallery', setGalleryImages, DEFAULT_GALLERY);
-    load('soetr_submissions', setSubmissions, []);
-    load('soetr_ref_counter', setRefCounter, 1);
+      // 2. Fetch Form Submissions (Grievance, Leaves, etc.)
+      const { data: submissionsData, error: subError } = await supabase.from('form_submissions').select('*');
+      if (!subError && submissionsData) {
+        const mappedSubs: MockSubmission[] = submissionsData.map(row => ({
+          id: row.ref_id,
+          date: new Date(row.created_at).toLocaleDateString('en-GB'),
+          enrollmentNo: row.enrollment_no,
+          name: row.student_name,
+          programme: row.programme,
+          formType: row.form_type,
+          data: row.payload || {},
+          isRead: row.is_read || false
+        }));
+        setSubmissions(mappedSubs);
+      }
+
+      // 3. Fetch Uploaded Study Materials
+      const { data: uploadsData, error: upError } = await supabase.from('uploaded_content').select('*');
+      if (!upError && uploadsData) {
+        const mappedUploads: UploadedContent[] = uploadsData.map(row => ({
+          id: row.id,
+          category: row.category,
+          programme: row.programme,
+          year: row.year,
+          semester: row.semester,
+          title: row.title,
+          description: row.description,
+          datePublished: new Date(row.created_at).toLocaleDateString('en-GB'),
+          fileName: row.file_name,
+          fileSize: row.file_size,
+          fileData: row.file_data
+        }));
+        setUploadedContent(mappedUploads);
+      }
+    } catch (err: any) {
+      console.error("Failed to fetch live database:", err.message);
+    }
+  };
+  fetchLiveDatabase();
   }, []);
 
   const isFormOpen = (formId: string): boolean => {
@@ -118,20 +156,34 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return true; 
   };
 
-  const updateFormTimeline = (timeline: FormTimeline) => {
-    setFormTimelines(prev => {
-      const updated = prev.map(t => t.formId === timeline.formId ? timeline : t);
-      localStorage.setItem('soetr_timelines', JSON.stringify(updated));
-      return updated;
-    });
-  };
+  const updateFormTimeline = async (timeline: FormTimeline) => {
+    const updatedTimelines = formTimelines.map(t => t.formId === timeline.formId ? timeline : t);
+    try {
+      const { error } = await supabase
+        .from('system_configurations')
+        .update({ config_payload: updatedTimelines })
+        .eq('config_key', 'form_timelines');
+        
+      if (error) throw error;
+      setFormTimelines(updatedTimelines);
+    } catch (err: any) {
+      console.error("Failed to update timeline:", err.message);
+    }
+   };
 
-  const updateAllFormTimelines = (active: boolean) => {
-    setFormTimelines(prev => {
-      const updated = prev.map(t => ({ ...t, isActive: active }));
-      localStorage.setItem('soetr_timelines', JSON.stringify(updated));
-      return updated;
-    });
+  const updateAllFormTimelines = async (active: boolean) => {
+    const updatedTimelines = formTimelines.map(t => ({ ...t, isActive: active }));
+    try {
+      const { error } = await supabase
+        .from('system_configurations')
+        .update({ config_payload: updatedTimelines })
+        .eq('config_key', 'form_timelines');
+        
+      if (error) throw error;
+      setFormTimelines(updatedTimelines);
+    } catch (err: any) {
+      console.error("Failed to update all timelines:", err.message);
+    }
   };
 
   const login = (role: Role, email?: string, adminRole?: AdminRole) => {
@@ -142,44 +194,147 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUser({ role: Role.STUDENT });
   };
 
-  const addDataRecord = (record: DataEntryRecord) => {
-    setDataRecords(prev => {
-      const updated = [record, ...prev];
-      localStorage.setItem('soetr_data_records', JSON.stringify(updated));
-      return updated;
-    });
+  const addDataRecord = async (record: DataEntryRecord) => {
+    try {
+      const { error } = await supabase
+        .from('students_registry')
+        .insert([{
+          enrollment_no: record.basicInfo.enrollmentNo,
+          name: record.basicInfo.name,
+          father_name: record.basicInfo.fatherName,
+          mother_name: record.basicInfo.motherName,
+          programme: record.basicInfo.programme,
+          academic_session: record.basicInfo.session,
+          academic_year: record.basicInfo.year,
+          semester: record.basicInfo.semester,
+          mobile: record.basicInfo.contact1,
+          whatsapp: record.basicInfo.whatsapp,
+          email: record.basicInfo.email,
+          address: record.basicInfo.address,
+          pin_code: record.basicInfo.pinCode,
+          photo_url: record.basicInfo.photoUrl,
+          edu_details: record.basicInfo.eduDetails,
+          extended_data: {
+            attendance1: record.attendance1,
+            attendance2: record.attendance2,
+            practical1: record.practical1,
+            practical2: record.practical2,
+            communityOutreach1: record.communityOutreach1,
+            examinations1: record.examinations1,
+            sports: record.sports,
+            qualifications: record.qualifications,
+            academicAchievements: record.academicAchievements,
+            adminWork: record.adminWork,
+            evaluation: record.evaluation,
+            technicalAchievements: record.technicalAchievements,
+            otherResponsibilities: record.otherResponsibilities
+          }
+        }]);
+        const updateDataRecord = async (id: string, record: DataEntryRecord) => {
+    try {
+      const { error } = await supabase.from('students_registry').update({
+          enrollment_no: record.basicInfo.enrollmentNo,
+          name: record.basicInfo.name,
+          father_name: record.basicInfo.fatherName,
+          mother_name: record.basicInfo.motherName,
+          programme: record.basicInfo.programme,
+          academic_session: record.basicInfo.session,
+          academic_year: record.basicInfo.year,
+          semester: record.basicInfo.semester,
+          mobile: record.basicInfo.contact1,
+          whatsapp: record.basicInfo.whatsapp,
+          email: record.basicInfo.email,
+          address: record.basicInfo.address,
+          pin_code: record.basicInfo.pinCode,
+          photo_url: record.basicInfo.photoUrl,
+          edu_details: record.basicInfo.eduDetails,
+          extended_data: {
+            attendance1: record.attendance1, attendance2: record.attendance2,
+            practical1: record.practical1, practical2: record.practical2,
+            communityOutreach1: record.communityOutreach1, examinations1: record.examinations1,
+            sports: record.sports, qualifications: record.qualifications,
+            academicAchievements: record.academicAchievements, adminWork: record.adminWork,
+            evaluation: record.evaluation, technicalAchievements: record.technicalAchievements,
+            otherResponsibilities: record.otherResponsibilities
+          }
+      }).eq('id', id);
+
+      if (error) throw error;
+      setDataRecords(prev => prev.map(r => r.id === id ? record : r));
+    } catch (err: any) {
+      alert("Failed to update master registry.");
+    }
   };
 
-  const deleteDataRecord = (id: string) => {
-    setDataRecords(prev => {
-      const updated = prev.filter(r => r.id !== id);
-      localStorage.setItem('soetr_data_records', JSON.stringify(updated));
-      return updated;
-    });
+      if (error) throw error;
+
+      setDataRecords(prev => [record, ...prev]);
+
+    } catch (err: any) {
+      console.error("Master Registry Sync Failed:", err.message);
+      alert("Failed to save student data to the master registry.");
+    }
   };
 
-  const publishContent = (content: UploadedContent) => {
-    setUploadedContent(prev => {
-      const updated = [content, ...prev];
-      localStorage.setItem('soetr_uploads', JSON.stringify(updated));
-      return updated;
-    });
+  const deleteDataRecord = async (id: string) => {
+    try {
+      const { error } = await supabase.from('students_registry').delete().eq('id', id);
+      if (error) throw error;
+      setDataRecords(prev => prev.filter(r => r.id !== id));
+    } catch (err: any) {
+      console.error("Delete Failed:", err.message);
+      alert("Failed to delete student from registry.");
+    }
   };
 
-  const deleteContent = (id: string) => {
-    setUploadedContent(prev => {
-      const updated = prev.filter(c => c.id !== id);
-      localStorage.setItem('soetr_uploads', JSON.stringify(updated));
-      return updated;
-    });
+  const publishContent = async (content: UploadedContent) => {
+    try {
+      const { error } = await supabase.from('academic_repository').insert([{
+        category: content.category,
+        programme: content.programme,
+        academic_year: content.year,
+        semester: content.semester,
+        title: content.title,
+        description: content.description,
+        file_name: content.fileName,
+        file_size: content.fileSize,
+        file_url: content.fileData, 
+        date_published: new Date().toISOString()
+      }]);
+
+      if (error) throw error;
+      
+      setUploadedContent(prev => [content, ...prev]);
+    } catch (err: any) {
+      console.error("Publish Failed:", err.message);
+      alert("Failed to publish content to repository.");
+    }
   };
 
-  const updateOfficialSignatures = (signs: Partial<OfficialSignatures>) => {
-    setOfficialSignatures(prev => {
-      const updated = { ...prev, ...signs };
-      localStorage.setItem('official_signatures', JSON.stringify(updated));
-      return updated;
-    });
+  const deleteContent = async (id: string) => {
+    try {
+      const { error } = await supabase.from('academic_repository').delete().eq('id', id);
+      if (error) throw error;
+      setUploadedContent(prev => prev.filter(c => c.id !== id));
+    } catch (err: any) {
+      console.error("Delete Failed:", err.message);
+      alert("Failed to delete artifact.");
+    }
+  };
+
+  const updateOfficialSignatures = async (signs: Partial<OfficialSignatures>) => {
+    const updatedSigns = { ...officialSignatures, ...signs };
+    try {
+      const { error } = await supabase
+        .from('system_configurations')
+        .update({ config_payload: updatedSigns })
+        .eq('config_key', 'official_signatures');
+        
+      if (error) throw error;
+      setOfficialSignatures(updatedSigns);
+    } catch (err: any) {
+      console.error("Failed to update signatures:", err.message);
+    }
   };
 
   const addGalleryImage = (img: GalleryImage) => {
@@ -198,52 +353,76 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
   };
 
-  const addGoverningMember = (member: GoverningBodyMember) => {
-    setGoverningBody(prev => {
-      const updated = [member, ...prev];
-      localStorage.setItem('soetr_governance', JSON.stringify(updated));
-      return updated;
-    });
+  // --- ENROLLMENT VERIFICATION LOGIC ---
+  const verifyStudentExists = async (enrollmentNo: string): Promise<boolean> => {
+    try {
+      // Replace 'student_records' with your actual master student table name in Supabase
+      const { data, error } = await supabase
+        .from('students_registry') 
+        .select('enrollment_no')
+        .eq('enrollment_no', enrollmentNo)
+        .single();
+
+      if (error || !data) {
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.error("Verification failed:", err);
+      return false;
+    }
   };
 
-  const updateGoverningMember = (member: GoverningBodyMember) => {
-    setGoverningBody(prev => {
-      const updated = prev.map(m => m.id === member.id ? member : m);
-      localStorage.setItem('soetr_governance', JSON.stringify(updated));
-      return updated;
-    });
+  const addSubmission = async (submission: MockSubmission) => {
+    try {
+      const { error } = await supabase
+        .from('form_submissions')
+        .insert([{
+          ref_id: submission.id,
+          form_type: submission.formType,
+          enrollment_no: submission.enrollmentNo,
+          student_name: submission.name,
+          programme: submission.programme,
+          payload: submission.data,
+          is_read: false
+        }]);
+
+      if (error) throw error;
+
+      setSubmissions(prev => [submission, ...prev]);
+      
+    } catch (err: any) {
+      console.error("Database Synchronization Failed:", err.message);
+      alert("Failed to save record to the server. Please try again.");
+    }
+   };
+  const deleteSubmission = async (id: string) => {
+    try {
+      const { error } = await supabase.from('form_submissions').delete().eq('ref_id', id);
+      if (error) throw error;
+      setSubmissions(prev => prev.filter(s => s.id !== id));
+    } catch (err: any) {
+      console.error("Delete Failed:", err.message);
+      alert("Failed to delete record from database.");
+    }
   };
 
-  const deleteGoverningMember = (id: string) => {
-    setGoverningBody(prev => {
-      const updated = prev.filter(m => m.id !== id);
-      localStorage.setItem('soetr_governance', JSON.stringify(updated));
-      return updated;
-    });
-  };
+  const markSubmissionAsRead = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('form_submissions')
+        .update({ is_read: true })
+        .eq('ref_id', id);
 
-  const addSubmission = (submission: MockSubmission) => {
-    setSubmissions(prev => {
-      const updated = [submission, ...prev];
-      localStorage.setItem('soetr_submissions', JSON.stringify(updated));
-      return updated;
-    });
-  };
+      if (error) throw error;
 
-  const deleteSubmission = (id: string) => {
-    setSubmissions(prev => {
-      const updated = prev.filter(s => s.id !== id);
-      localStorage.setItem('soetr_submissions', JSON.stringify(updated));
-      return updated;
-    });
-  };
-
-  const markSubmissionAsRead = (id: string) => {
-    setSubmissions(prev => {
-      const updated = prev.map(s => s.id === id ? { ...s, isRead: true } : s);
-      localStorage.setItem('soetr_submissions', JSON.stringify(updated));
-      return updated;
-    });
+      setSubmissions(prev => {
+        const updated = prev.map(s => s.id === id ? { ...s, isRead: true } : s);
+        return updated;
+      });
+    } catch (err: any) {
+      console.error("Failed to mark as read:", err.message);
+    }
   };
 
   const generateRefNo = () => {
@@ -272,8 +451,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       officialSignatures, updateOfficialSignatures,
       galleryImages: galleryImages.length > 0 ? galleryImages : DEFAULT_GALLERY,
       addGalleryImage, deleteGalleryImage,
-      governingBody, addGoverningMember, updateGoverningMember, deleteGoverningMember,
-      submissions, addSubmission, deleteSubmission, markSubmissionAsRead, generateRefNo, getSchoolEnrollmentCount
+      submissions, addSubmission, deleteSubmission, markSubmissionAsRead, generateRefNo, getSchoolEnrollmentCount, verifyStudentExists
     }}>
       {children}
     </AuthContext.Provider>

@@ -3,6 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import chancellorImg from './ChancellorSir.png';
+import proChancellorImg from './PC.png';
+import vcImg from './VC.png';
+import pvcImg from './PVC.png';
 
 const SERVICE_BUTTONS = [
   { id: 'notice-board', label: 'Notice Board', path: '/view/notice-board', category: 'Notice', icon: 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9' },
@@ -22,11 +25,19 @@ const FORM_BUTTONS = [
 ];
 
 const ACADEMIC_PLATFORMS = [
-  { name: "NCERT Hub", url: "https://www.youtube.com/@ncertofficial", icon: "M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z", color: "text-blue-600" },
+  { name: "NCERT", url: "https://www.youtube.com/@ncertofficial", icon: "M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z", color: "text-blue-600" },
   { name: "NIOS", url: "https://www.youtube.com/@NIOSLearning", icon: "M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253", color: "text-orange-600" },
   { name: "SWAYAM", url: "https://www.youtube.com/@swayamprabha-mhrd", icon: "M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z", color: "text-purple-600" },
   { name: "IGNOU", url: "https://www.youtube.com/@IGNOU", icon: "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10", color: "text-indigo-600" },
-  { name: "UGC Hub", url: "https://www.youtube.com/@UGC_India", icon: "M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9", color: "text-teal-600" }
+  { name: "UGC", url: "https://www.youtube.com/@UGC_India", icon: "M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9", color: "text-teal-600" }
+];
+
+const OFFICIAL_LINKS = [
+  { name: "NCERT", url: "https://ncert.nic.in/", icon: "M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" },
+  { name: "NIOS", url: "https://www.nios.ac.in/", icon: "M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" },
+  { name: "SWAYAM", url: "https://swayam.gov.in/", icon: "M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" },
+  { name: "IGNOU", url: "http://ignou.ac.in/", icon: "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" },
+  { name: "UGC", url: "https://www.ugc.gov.in/", icon: "M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" }
 ];
 
 const CAREER_PLATFORMS = [
@@ -37,9 +48,36 @@ const CAREER_PLATFORMS = [
   { name: "CTET Hub", url: "https://ctet.nic.in", icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2v12a2 2 0 002 2z", color: "text-sky-800" }
 ];
 
+const LEADERSHIP = [
+  {
+    name: "Er. Ravi Chaudhary",
+    title: "Hon'ble Chancellor",
+    image: chancellorImg,
+    message: "Our mission is to cultivate a learning environment where innovation meets tradition. We are dedicated to producing educators who will inspire, lead, and contribute meaningfully to the global academic landscape."
+  },
+  {
+    name: "Er. Richee Ravi", 
+    title: "Pro Chancellor",
+    image: proChancellorImg,
+    message: "We are committed to bridging the gap between academia and industry, fostering a culture of research, and equipping our students with the strategic skills required to navigate a rapidly evolving global ecosystem."
+  },
+  {
+    name: "Dr. Badiadka Narayana",
+    title: "Vice Chancellor",
+    image: vcImg,
+    message: "Academic rigor and student welfare are the cornerstones of our operations. We strive to provide a holistic, transformative educational experience that shapes not just successful careers, but exceptional character."
+  },
+  {
+    name: "Dr. Rumki Bandopadhyay",
+    title: "Pro Vice Chancellor",
+    image: pvcImg,
+    message: "Through continuous curriculum innovation and active campus engagement, we ensure that our pedagogical approaches remain at the absolute cutting edge of modern educational and technological standards."
+  }
+];
+
 export const Home: React.FC = () => {
   const navigate = useNavigate();
-  const { isFormOpen, galleryImages, governingBody, uploadedContent } = useAuth();
+  const { isFormOpen, galleryImages, uploadedContent } = useAuth();
   const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
@@ -58,9 +96,6 @@ export const Home: React.FC = () => {
   };
 
   const visibleFormButtons = FORM_BUTTONS.filter(btn => isFormOpen(btn.id));
-
-  /* Keep your imports, constants, and the top part of the Home component the same. 
-   Replace the return() statement onwards with this: */
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 pb-24 w-full no-print font-sans overflow-x-hidden">
@@ -100,7 +135,7 @@ export const Home: React.FC = () => {
             <h3 className="text-lg md:text-xl font-black uppercase tracking-widest text-kku-blue text-center">Security Portal</h3>
             <p className="text-[8px] md:text-[9px] font-black uppercase text-gray-400 mt-2 tracking-[0.2em] text-center">Official Record Lookup</p>
           </button>
-          <a href="https://www.youtube.com/@K.K.UniversityS.O.E.R.T" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center p-6 md:p-8 bg-red-700 text-white rounded-[2rem] md:rounded-[2.5rem] shadow-2xl hover:-translate-y-2 transition-all group">
+          <a href="https://youtube.com/@drajaya2aeduzone96?si=hGYdBsD-l0HEk87J" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center p-6 md:p-8 bg-red-700 text-white rounded-[2rem] md:rounded-[2.5rem] shadow-2xl hover:-translate-y-2 transition-all group">
             <div className="w-12 h-12 md:w-14 md:h-14 bg-white text-red-700 flex items-center justify-center mb-4 rounded-3xl"><svg fill="currentColor" viewBox="0 0 24 24" className="w-6 h-6 md:w-8 md:h-8"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505a3.017 3.017 0 0 0-2.122 2.136C0 8.055 0 12 0 12s0 3.945.501 5.814a3.017 3.017 0 0 0 2.122 2.136C4.495 20.455 12 20.455 12 20.455s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.945 24 12 24 12s0-3.945-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg></div>
             <h3 className="text-lg md:text-xl font-black uppercase tracking-widest text-center">YouTube Hub</h3>
             <p className="text-[8px] md:text-[9px] font-black uppercase text-red-100 mt-2 tracking-[0.2em] text-center">Lecture Archives</p>
@@ -113,24 +148,34 @@ export const Home: React.FC = () => {
         </div>
 
         {/* Leadership Section */}
-        {isLeadershipVisible && governingBody.length > 0 && (
+        {isLeadershipVisible && LEADERSHIP.length > 0 && (
           <div className="mb-16 md:mb-24 animate-fadeIn">
             <div className="flex flex-col items-center mb-8 md:mb-12 text-center px-2">
               <h2 className="text-2xl md:text-4xl font-serif font-black text-kku-blue uppercase tracking-[0.2em] md:tracking-[0.4em] break-words">Institutional Leadership</h2>
               <div className="h-1.5 w-24 md:w-32 bg-kku-gold mt-4 rounded-full"></div>
             </div>
-            <div className="space-y-8 md:space-y-12">
-              {governingBody.map((member, idx) => (
-                <div key={member.id} className={`flex flex-col ${idx % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'} items-center gap-8 md:gap-12 bg-white border-4 border-kku-blue rounded-[2.5rem] md:rounded-[4rem] p-6 md:p-12 shadow-[0_40px_100px_rgba(0,31,63,0.1)] hover:-translate-y-2 transition-all group`}>
-                  {/* FIXED: Reduced w-64 to w-48 on mobile so it doesn't overflow */}
-                  <div className="w-48 h-48 md:w-80 md:h-80 rounded-[2rem] md:rounded-[3rem] border-8 border-gray-50 overflow-hidden shadow-2xl ring-8 ring-kku-gold/10 shrink-0">
-                    <img src={member.title.toLowerCase().includes('chancellor') ? chancellorImg : member.image} alt={member.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+              {LEADERSHIP.map((leader, index) => (
+                <div key={index} className="bg-white border-4 border-kku-blue rounded-[2.5rem] overflow-hidden shadow-xl hover:shadow-2xl transition-all group flex flex-col hover:-translate-y-2">
+                  <div className="h-64 overflow-hidden relative border-b-4 border-kku-gold">
+                    <img 
+                      src={leader.image} 
+                      alt={leader.title} 
+                      className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500" 
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#001F3F]/90 via-[#001F3F]/30 to-transparent"></div>
+                    <div className="absolute bottom-0 left-0 w-full p-6">
+                      <h3 className="text-xl font-black uppercase text-white leading-tight drop-shadow-lg">{leader.name}</h3>
+                      <p className="text-[10px] font-black tracking-widest text-kku-gold uppercase mt-1 drop-shadow-md">{leader.title}</p>
+                    </div>
                   </div>
-                  <div className={`flex-1 flex flex-col items-center ${idx % 2 === 0 ? 'md:items-start md:text-left' : 'md:items-end md:text-right'} text-center`}>
-                    <span className="bg-kku-blue text-white px-4 md:px-6 py-1.5 rounded-2xl font-black text-[9px] md:text-[10px] uppercase tracking-[0.2em] mb-4">Master Authority</span>
-                    <h3 className="text-2xl md:text-4xl font-black uppercase tracking-tight text-kku-blue mb-1">{member.name}</h3>
-                    <p className="text-sm md:text-lg font-black uppercase text-kku-gold tracking-[0.1em] md:tracking-[0.2em] mb-6 md:mb-8">{member.title}</p>
-                    <p className="text-sm md:text-lg font-serif font-bold text-gray-700 leading-relaxed italic md:border-l-4 md:border-kku-gold/40 md:pl-6">{member.description}</p>
+                  <div className="p-8 flex-1 flex flex-col items-center text-center bg-gray-50 relative">
+                    <span className="text-6xl text-kku-gold/20 absolute -top-2 left-4 font-serif">"</span>
+                    <p className="text-sm font-bold text-gray-700 italic leading-relaxed relative z-10">
+                      {leader.message}
+                    </p>
+                    <span className="text-6xl text-kku-gold/20 absolute bottom-0 right-4 font-serif transform rotate-180">"</span>
                   </div>
                 </div>
               ))}
@@ -148,7 +193,6 @@ export const Home: React.FC = () => {
                 const isOpen = isFormOpen(btn.id);
                 if (!isOpen) return null;
                 return (
-                  /* FIXED: Reduced mobile padding from p-10 to p-4 */
                   <button key={btn.id} onClick={() => navigate(btn.path)} className="flex flex-col items-center justify-center p-4 md:p-10 bg-white border border-black rounded-[1.5rem] md:rounded-[2.5rem] shadow-xl hover:bg-kku-blue hover:text-white transition-all transform hover:-translate-y-1 group relative overflow-hidden">
                     {count > 0 && <div className="absolute top-2 right-2 md:top-4 md:right-4 bg-kku-gold text-kku-blue text-[8px] md:text-[9px] font-black px-2 py-0.5 rounded-full shadow-md animate-pulse">{count} New</div>}
                     <div className="w-8 h-8 md:w-12 md:h-12 mb-4 md:mb-6 text-kku-gold group-hover:text-white transition-colors"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-full h-full"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={btn.icon}></path></svg></div>
@@ -159,15 +203,31 @@ export const Home: React.FC = () => {
             </div>
           </div>
 
-          <div>
-            <h4 className="text-lg md:text-xl font-serif font-black text-red-700 uppercase tracking-[0.1em] md:tracking-[0.3em] border-l-4 border-red-700 pl-4 md:pl-6 mb-6 md:mb-8">Educational Hub</h4>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6">
+          {/* EDUCATIONAL HUB (Red YouTube Design - Ultra Mobile Responsive) */}
+          <div className="mb-12 md:mb-16">
+            <h4 className="text-lg md:text-xl font-serif font-black text-red-700 uppercase tracking-[0.1em] md:tracking-[0.3em] border-l-4 border-red-700 pl-4 md:pl-6 mb-6 md:mb-8">Educational Hub - Official YouTube Channels</h4>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 md:gap-6">
               {ACADEMIC_PLATFORMS.map(p => (
-                <a key={p.name} href={p.url} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center justify-center p-4 md:p-10 bg-white border border-black rounded-[1.5rem] md:rounded-[2.5rem] shadow-xl hover:bg-red-700 hover:text-white transition-all transform hover:-translate-y-1 group">
-                  <div className={`w-8 h-8 md:w-12 md:h-12 mb-4 md:mb-6 ${p.color} group-hover:text-white transition-colors`}>
+                <a key={p.name} href={p.url} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center justify-center p-2 sm:p-4 md:p-8 bg-white border border-gray-300 rounded-[1.2rem] md:rounded-[2.5rem] shadow-md hover:shadow-xl hover:bg-red-700 hover:border-red-700 hover:text-white transition-all transform hover:-translate-y-1 group w-full min-h-[90px] md:min-h-[120px] overflow-hidden">
+                  <div className={`w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 mb-1.5 md:mb-4 flex-none shrink-0 ${p.color} group-hover:text-white transition-colors`}>
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-full h-full"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={p.icon}></path></svg>
                   </div>
-                  <span className="text-[9px] md:text-[11px] font-black uppercase text-center tracking-wider md:tracking-widest leading-tight">{p.name}</span>
+                  <span className="text-[8.5px] sm:text-[9px] md:text-[11px] font-black uppercase text-center tracking-tight md:tracking-widest leading-tight break-words w-full px-0.5">{p.name}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+
+          {/* OFFICIAL LINKS (Blue Outline Design - Ultra Mobile Responsive) */}
+          <div className="mb-12 md:mb-16">
+            <h4 className="text-lg md:text-xl font-serif font-black text-blue-900 uppercase tracking-[0.1em] md:tracking-[0.3em] border-l-4 border-blue-900 pl-4 md:pl-6 mb-6 md:mb-8">Educational Hub - Official Links</h4>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 md:gap-6">
+              {OFFICIAL_LINKS.map(link => (
+                <a key={link.name} href={link.url} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center justify-center p-2 sm:p-4 md:p-8 border-2 border-blue-900 bg-white rounded-[1.2rem] md:rounded-[2.5rem] transition-all shadow-md hover:shadow-xl hover:-translate-y-1 hover:bg-blue-900 hover:text-white group w-full min-h-[90px] md:min-h-[120px] overflow-hidden">
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 mb-1.5 md:mb-4 flex-none shrink-0 text-blue-900 group-hover:text-white transition-colors">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-full h-full"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={link.icon}></path></svg>
+                  </div>
+                  <span className="text-[8.5px] sm:text-[9px] md:text-[11px] font-black uppercase text-center tracking-tight md:tracking-widest leading-tight break-words w-full px-0.5 text-blue-900 group-hover:text-white">{link.name}</span>
                 </a>
               ))}
             </div>

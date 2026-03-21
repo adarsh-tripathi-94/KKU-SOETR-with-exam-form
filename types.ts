@@ -74,11 +74,16 @@ export interface DataEntryRecord {
     programme: string;
     session: string;
     year: string;
+    semester: string;
     photoUrl: string;
     contact1: string;
     whatsapp: string;
     email: string;
+    pinCode?: string;
+    city?: string;
+    state?: string;
     address: string;
+    eduDetails?: any[];
   };
   attendance1?: AttendanceRecord[];
   attendance2?: AttendanceRecord[];
@@ -125,8 +130,8 @@ export interface DataEntryRecord {
 export interface AttendanceRecord {
   month: string;
   workingDays: number;
-  presentDays: number;
-  percentage: number;
+  presentDays: number | 'N/A';
+  percentage: number | 'N/A';
 }
 
 export interface PracticalFileStatus {

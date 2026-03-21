@@ -40,8 +40,8 @@ export const InternshipLetter: React.FC = () => {
     programme: 'B.Ed.',
     formDate: new Date().toLocaleDateString('en-GB').replace(/\//g, '-')
   });
-  
-  const { addSubmission, officialSignatures, generateRefNo, getSchoolEnrollmentCount } = useAuth();
+  const [enrollmentError, setEnrollmentError] = useState<string>('');
+  const { addSubmission, officialSignatures, generateRefNo, getSchoolEnrollmentCount, verifyStudentExists } = useAuth();
   const [currentRefNo, setCurrentRefNo] = useState('');
   const [activeSchoolList, setActiveSchoolList] = useState<SchoolMapping[]>([]);
   const navigate = useNavigate();
@@ -94,12 +94,22 @@ export const InternshipLetter: React.FC = () => {
 
   const handleSub = async (e: React.FormEvent) => {
     e.preventDefault();
+    setEnrollmentError(''); // Clear previous errors on new attempt
+
     const errs = validate();
     if (errs) {
       alert("Missing Requirements:\n\n" + errs.join("\n"));
       return;
     }
     
+    // --- NEW: DATABASE VERIFICATION STEP ---
+    const isVerified = await verifyStudentExists(formData.enrollmentNo!);
+    if (!isVerified) {
+      setEnrollmentError('Enrollment No. not found in master registry.');
+      return; // Stop the submission completely
+    }
+    // ---------------------------------------
+
     const count = getSchoolEnrollmentCount(formData.internshipSchool!);
     if (count >= MAX_CAPACITY) {
       alert(`This school has reached its maximum capacity of ${MAX_CAPACITY} students.`);
@@ -108,7 +118,7 @@ export const InternshipLetter: React.FC = () => {
 
     addSubmission({ 
       id: currentRefNo, 
-      date: formData.formDate || new Date().toLocaleDateString(), 
+      date: formData.formDate || new Date().toLocaleDateString('en-GB'), 
       enrollmentNo: formData.enrollmentNo || '', 
       name: formData.name || '', 
       programme: formData.programme || '', 
@@ -133,7 +143,7 @@ export const InternshipLetter: React.FC = () => {
     <div className="font-serif opacity-100 w-full overflow-hidden">
       
       {/* Top Grid Area (Inputs + Photo/Signature) */}
-      <div className="flex flex-row w-full gap-2 md:gap-4">
+      <div className="flex flex-col md:flex-row w-full gap-4 md:gap-4">
         {/* Left Side: Inputs */}
         <div className="flex-[3] min-w-0">
           <div className="w-full">
@@ -141,10 +151,24 @@ export const InternshipLetter: React.FC = () => {
             <input readOnly={!isInteractive} value={formData.name || ''} onChange={e => setFormData({...formData, name: e.target.value})} className={inputCls} placeholder="AS PER MATRICULATION RECORDS" />
           </div>
           
-          <div className="flex w-full gap-2 md:gap-4">
+          <div className="flex flex-col md:flex-row w-full gap-2 md:gap-4">
             <div className="flex-1 min-w-0">
               <label className={labelCls}>Admission / Enrollment No.</label>
-              <input readOnly={!isInteractive} value={formData.enrollmentNo || ''} onChange={e => setFormData({...formData, enrollmentNo: e.target.value})} className={inputCls} />
+              <input 
+                readOnly={!isInteractive} 
+                value={formData.enrollmentNo || ''} 
+                onChange={e => {
+                  setFormData({...formData, enrollmentNo: e.target.value});
+                  setEnrollmentError(''); // Clears the red error as soon as they start typing to fix it
+                }} 
+                className={`${inputCls} ${enrollmentError ? 'border-red-600 bg-red-50' : ''}`} 
+              />
+              {/* This renders the red error text directly below the box if it fails */}
+              {enrollmentError && (
+                <p className="text-[9px] font-black text-red-600 uppercase mt-1 animate-pulse tracking-widest">
+                  {enrollmentError}
+                </p>
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <label className={labelCls}>Academic Session (YYYY-YYYY)</label>
@@ -157,7 +181,7 @@ export const InternshipLetter: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex w-full gap-2 md:gap-4">
+          <div className="flex flex-col md:flex-row w-full gap-2 md:gap-4">
             <div className="flex-1 min-w-0">
               <label className={labelCls}>Father's Name</label>
               <input readOnly={!isInteractive} value={formData.fatherName || ''} onChange={e => setFormData({...formData, fatherName: e.target.value})} className={inputCls} />
@@ -178,7 +202,7 @@ export const InternshipLetter: React.FC = () => {
             ) : <div className={inputCls}>{formData.programme}</div>}
           </div>
 
-          <div className="flex w-full gap-2 md:gap-4">
+          <div className="flex flex-col md:flex-row w-full gap-2 md:gap-4">
             <div className="flex-1 min-w-0">
               <label className={labelCls}>Year</label>
               {isInteractive ? (
@@ -208,7 +232,7 @@ export const InternshipLetter: React.FC = () => {
         </div>
 
         {/* Right Side: Photo and Signature */}
-        <div className="flex-[1] max-w-[3.6cm] shrink-0 flex flex-col gap-2 mt-6">
+        <div className="flex-[1] w-full md:max-w-[3.6cm] shrink-0 flex flex-col items-center md:items-start gap-2 mt-6 md:mt-0">
           <div className="w-full h-[4.5cm] border-[1.5px] border-black flex items-center justify-center relative bg-white overflow-hidden hover:bg-gray-50 transition-colors">
             {formData.photoUrl ? (
               <img src={formData.photoUrl} className="w-full h-full object-cover" alt="Student Photo" />
@@ -236,7 +260,7 @@ export const InternshipLetter: React.FC = () => {
       {/* Internship Allotment Section */}
       <h4 className="text-center font-black text-[12pt] uppercase underline mb-5 tracking-wide">Internship Allotment & Placement Details</h4>
       
-      <div className="flex w-full gap-2 md:gap-8 mb-4">
+      <div className="flex flex-col md:flex-row w-full gap-4 md:gap-8 mb-4">
         <div className="flex-1 min-w-0">
           <label className={labelCls}>Allotted Host School (Max 25)</label>
           {isInteractive ? (
@@ -257,7 +281,7 @@ export const InternshipLetter: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex w-full gap-2 md:gap-8 mb-6">
+      <div className="flex flex-col md:flex-row w-full gap-4 md:gap-8 mb-6">
         <div className="flex-1 min-w-0">
           <label className={labelCls}>Commencement Date</label>
           <input readOnly={!isInteractive} type="text" maxLength={10} placeholder="DD-MM-YYYY" value={formData.internshipStartDate || ''} onChange={e => setFormData({...formData, internshipStartDate: formatDate(e.target.value)})} className={`${inputCls} text-center`} />
@@ -273,7 +297,7 @@ export const InternshipLetter: React.FC = () => {
       </div>
 
       {/* Footer Signatures */}
-      <div className="flex justify-between items-end mt-12 px-2 md:px-6">
+      <div className="flex flex-col sm:flex-row justify-between items-center sm:items-end gap-8 mt-12 px-2 md:px-6">
         <div className="flex flex-col items-center">
           <div className="text-center mb-6">
             <div className="w-[3.6cm] h-[1.2cm] border-[1.5px] border-black border-dashed flex items-center justify-center relative bg-white overflow-hidden">
