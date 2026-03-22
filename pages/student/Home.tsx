@@ -43,9 +43,22 @@ const OFFICIAL_LINKS = [
 const CAREER_PLATFORMS = [
   { name: "Sarkari Result", url: "https://www.sarkariresult.com", icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2", color: "text-green-700" },
   { name: "UPSC Hub", url: "https://www.upsc.gov.in", icon: "M12 14l9-5-9-5-9 5 9 5zm0 0l9-5-9-5-9 5 9 5zm0 0v6m0 0l4-2.25M12 20l-4-2.25", color: "text-blue-900" },
-  { name: "BPSC Portal", url: "https://www.bpsc.bih.nic.in", icon: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4", color: "text-red-800" },
+  { name: "BPSC Portal", url: "https://bpsc.bihar.gov.in", icon: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4", color: "text-red-800" },
   { name: "UGC-NET", url: "https://ugcnet.nta.nic.in", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z", color: "text-indigo-800" },
   { name: "CTET Hub", url: "https://ctet.nic.in", icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2v12a2 2 0 002 2z", color: "text-sky-800" }
+];
+
+const CAREER_PORTALS = [
+  { id: 'kvs', agency: 'Kendriya Vidyalaya', label: 'KVS Recruitment', url: 'https://kvsangathan.nic.in/', color: 'bg-[#DC3545]', shadow: 'border-[#B02A37]' },
+  { id: 'nvs', agency: 'Navodaya Vidyalaya', label: 'NVS Recruitment', url: 'https://navodaya.gov.in/', color: 'bg-[#28589C]', shadow: 'border-[#1E4377]' },
+  { id: 'awes', agency: 'Army Welfare Education', label: 'Army School (AWES)', url: 'https://www.awesindia.com/', color: 'bg-[#0088C2]', shadow: 'border-[#006691]' },
+  { id: 'dav', agency: 'DAV Management', label: 'DAV Schools', url: 'http://davcmc.net.in/', color: 'bg-[#0039A6]', shadow: 'border-[#002875]' },
+  { id: 'dps', agency: 'DPS Society', label: 'Delhi Public School', url: 'https://www.dpsfamily.org/', color: 'bg-[#FF9900]', shadow: 'border-[#CC7A00]' },
+  { id: 'sarkari', agency: 'Govt. Job Updates', label: 'Sarkari Result', url: 'https://www.sarkariresult.com/', color: 'bg-[#E50000]', shadow: 'border-[#B30000]' },
+  { id: 'naukri', agency: 'Corporate Careers', label: 'Naukri.com', url: 'https://www.naukri.com/', color: 'bg-[#2740C3]', shadow: 'border-[#1D3093]' },
+  { id: 'linkedin', agency: 'Professional Network', label: 'LinkedIn', url: 'https://www.linkedin.com/', color: 'bg-[#0077B5]', shadow: 'border-[#005582]' },
+  { id: 'bpsc', agency: 'Bihar Public Service', label: 'BPSC Official', url: 'https://www.bpsc.bih.nic.in/', color: 'bg-[#FF5722]', shadow: 'border-[#CC461B]' },
+  { id: 'ctet', agency: 'Teacher Eligibility', label: 'CTET Portal', url: 'https://ctet.nic.in/', color: 'bg-[#008B38]', shadow: 'border-[#00682A]' }
 ];
 
 const LEADERSHIP = [
@@ -261,7 +274,44 @@ export const Home: React.FC = () => {
             </div>
           </div>
         </div>
+        {/* CAREER & RECRUITMENT PORTALS (Custom 3D Design) */}
+          <div className="mb-16 md:mb-24 pt-8">
+            <div className="flex flex-col items-center mb-8 md:mb-12 text-center px-2">
+              <h2 className="text-xl md:text-3xl font-serif font-black text-kku-blue uppercase tracking-[0.2em] break-words">Career & Recruitment Portals</h2>
+              <div className="h-1 w-full max-w-lg bg-kku-gold mt-4"></div>
+            </div>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
+              {CAREER_PORTALS.map(p => (
+                <a 
+                  key={p.id} 
+                  href={p.url} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className={`relative flex flex-col items-center justify-between p-4 md:p-6 ${p.color} border-b-[8px] ${p.shadow} rounded-[2rem] text-white transition-all overflow-hidden group min-h-[160px] md:min-h-[180px] hover:-translate-y-1 hover:brightness-110 active:translate-y-2 active:border-b-0`}
+                >
+                  {/* Faint Background Briefcase Icon */}
+                  <svg className="absolute -bottom-6 -right-6 w-32 h-32 text-black opacity-[0.08] group-hover:scale-110 group-hover:-rotate-6 transition-transform duration-500 pointer-events-none" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/>
+                  </svg>
 
+                  {/* Text Content */}
+                  <div className="relative z-10 w-full text-center flex-1 flex flex-col justify-center">
+                    <span className="text-[7px] md:text-[8px] font-black uppercase tracking-[0.2em] text-white/80 mb-1.5 md:mb-2">{p.agency}</span>
+                    <span className="text-sm md:text-lg font-black uppercase leading-tight drop-shadow-md px-1">{p.label}</span>
+                  </div>
+
+                  {/* Connect Pill Button */}
+                  <div className="relative z-10 mt-4 bg-black/20 rounded-full px-4 py-1.5 md:py-2 flex items-center justify-center gap-2 w-[85%] backdrop-blur-sm border border-white/10 group-hover:bg-black/30 transition-colors">
+                    <span className="text-[7px] md:text-[8px] font-black uppercase tracking-widest">Connect</span>
+                    <svg className="w-2.5 h-2.5 md:w-3 md:h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
         {visibleFormButtons.length > 0 && (
           <div className="mb-16 md:mb-24 animate-fadeIn">
             <h2 className="text-xl md:text-3xl font-serif font-black text-blue-900 uppercase tracking-[0.1em] md:tracking-[0.3em] border-l-4 md:border-l-8 border-red-700 pl-4 md:pl-8 mb-8 md:mb-12">Institutional Registrations</h2>
