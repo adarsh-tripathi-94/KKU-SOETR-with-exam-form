@@ -3,6 +3,9 @@ import React, { createContext, useState, useContext, ReactNode, useEffect } from
 import { User, Role, AdminRole, DataEntryRecord, AdminUser, OfficialSignatures, UploadedContent, FormTimeline, GalleryImage, GoverningBodyMember, MockSubmission } from '../types';
 import { supabase } from '../supabaseClient';
 import seminarImg from '../pages/student/seminar.png';
+import festsImg from '../pages/student/fests.png';
+import farewellImg from '../pages/student/fresher.png'
+import labImg from '../pages/student/lab.png'
 
 const INITIAL_TIMELINES: FormTimeline[] = [
   { formId: 'notice-board', formName: 'Notice Board', startDate: '01-01-2024', endDate: '31-12-2030', isActive: true },
@@ -24,7 +27,10 @@ const INITIAL_TIMELINES: FormTimeline[] = [
 const DEFAULT_GALLERY: GalleryImage[] = [
   { id: 'gal1', url: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&q=80&w=1600&h=800', title: 'Micro-Teaching Sessions', description: 'Developing core pedagogical competencies through structured peer-teaching cycles.' },
   { id: 'gal2', url: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=1600&h=800', title: 'Interactive Group Discussions', description: 'Fostering collaborative learning and critical analysis of educational theories.' },
-  { id: 'gal3', url: seminarImg, title: 'Seminar Presentations', description: 'Building professional confidence and mastery through scholarly academic discourse.' }
+  {id: 'gal3', url: labImg, title: 'Regular Lab Activities', description: 'For practical Experience'},
+  { id: 'gal4', url: seminarImg, title: 'Seminar Presentations', description: 'Building professional confidence and mastery through scholarly academic discourse.' },
+  { id: 'gal5', url: festsImg, title: 'Cultural & Sports Fests', description: 'Celebrating holistic development and community spirit through vibrant events.' },
+  { id: 'gal6', url: farewellImg, title: 'Freshers & Farewell Gatherings', description: 'Cultivating social values and community spirit through vibrant events'}
 ];
 
 interface AuthContextType {
@@ -59,6 +65,8 @@ interface AuthContextType {
   getSchoolEnrollmentCount: (schoolName: string) => number;
   verifyStudentExists: (enrollmentNo: string) => Promise<boolean>;
   updateDataRecord: (id: string, record: DataEntryRecord) => Promise<void>;
+  buttonLocks: Record<string, boolean>;
+  toggleButtonLock: (buttonId: string, isLocked: boolean) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -75,79 +83,66 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>(DEFAULT_GALLERY);
   const [submissions, setSubmissions] = useState<MockSubmission[]>([]);
   const [refCounter, setRefCounter] = useState(1);
+  const [buttonLocks, setButtonLocks] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const fetchLiveDatabase = async () => {
-    try {
-      // 1. Fetch Master Student Records
-      const { data: studentsData, error: studentError } = await supabase.from('students_registry').select('*');
-      if (studentError) throw studentError;
-      
-      if (studentsData) {
-        const mappedStudents: DataEntryRecord[] = studentsData.map(dbRow => ({
-          id: dbRow.id,
-          domain: dbRow.domain || 'Student',
-          basicInfo: {
-            enrollmentNo: dbRow.enrollment_no || '',
-            name: dbRow.name || '',
-            fatherName: dbRow.father_name || '',
-            motherName: dbRow.mother_name || '',
-            programme: dbRow.programme || '',
-            session: dbRow.academic_session || '',
-            year: dbRow.academic_year || '',
-            semester: dbRow.semester || '',
-            contact1: dbRow.mobile || '',
-            whatsapp: dbRow.whatsapp || '',
-            email: dbRow.email || '',
-            address: dbRow.address || '',
-            pinCode: dbRow.pin_code || '',
-            photoUrl: dbRow.photo_url || '',
-            eduDetails: dbRow.edu_details || []
-          },
-          ...(dbRow.extended_data || {}) // Safely expands attendance & practicals!
-        }));
-        setDataRecords(mappedStudents);
-      }
+      try {
+        // 1. Fetch Master Student Records
+        const { data: studentsData, error: studentError } = await supabase.from('students_registry').select('*');
+        if (!studentError && studentsData) {
+          const mappedStudents: DataEntryRecord[] = studentsData.map(dbRow => ({
+            id: dbRow.id,
+            domain: dbRow.domain || 'Student',
+            basicInfo: {
+              enrollmentNo: dbRow.enrollment_no || '', name: dbRow.name || '', fatherName: dbRow.father_name || '', motherName: dbRow.mother_name || '', programme: dbRow.programme || '', session: dbRow.academic_session || '', year: dbRow.academic_year || '', semester: dbRow.semester || '', contact1: dbRow.mobile || '', whatsapp: dbRow.whatsapp || '', email: dbRow.email || '', address: dbRow.address || '', pinCode: dbRow.pin_code || '', photoUrl: dbRow.photo_url || '', eduDetails: dbRow.edu_details || []
+            },
+            ...(dbRow.extended_data || {}) 
+          }));
+          setDataRecords(mappedStudents);
+        }
 
-      // 2. Fetch Form Submissions (Grievance, Leaves, etc.)
-      const { data: submissionsData, error: subError } = await supabase.from('form_submissions').select('*');
-      if (!subError && submissionsData) {
-        const mappedSubs: MockSubmission[] = submissionsData.map(row => ({
-          id: row.ref_id,
-          date: new Date(row.created_at).toLocaleDateString('en-GB'),
-          enrollmentNo: row.enrollment_no,
-          name: row.student_name,
-          programme: row.programme,
-          formType: row.form_type,
-          data: row.payload || {},
-          isRead: row.is_read || false
-        }));
-        setSubmissions(mappedSubs);
-      }
+        // 2. Fetch Form Submissions 
+        const { data: submissionsData, error: subError } = await supabase.from('form_submissions').select('*');
+        if (!subError && submissionsData) {
+          const mappedSubs: MockSubmission[] = submissionsData.map(row => ({
+            id: row.ref_id, date: new Date(row.created_at).toLocaleDateString('en-GB'), enrollmentNo: row.enrollment_no, name: row.student_name, programme: row.programme, formType: row.form_type, data: row.payload || {}, isRead: row.is_read || false
+          }));
+          setSubmissions(mappedSubs);
+        }
 
-      // 3. Fetch Uploaded Study Materials
-      const { data: uploadsData, error: upError } = await supabase.from('uploaded_content').select('*');
-      if (!upError && uploadsData) {
-        const mappedUploads: UploadedContent[] = uploadsData.map(row => ({
-          id: row.id,
-          category: row.category,
-          programme: row.programme,
-          year: row.year,
-          semester: row.semester,
-          title: row.title,
-          description: row.description,
-          datePublished: new Date(row.created_at).toLocaleDateString('en-GB'),
-          fileName: row.file_name,
-          fileSize: row.file_size,
-          fileData: row.file_data
-        }));
-        setUploadedContent(mappedUploads);
+        // 3. Fetch Uploaded Study Materials
+        const { data: uploadsData, error: upError } = await supabase.from('uploaded_content').select('*');
+        if (!upError && uploadsData) {
+          const mappedUploads: UploadedContent[] = uploadsData.map(row => ({
+            id: row.id, category: row.category, programme: row.programme, year: row.year, semester: row.semester, title: row.title, description: row.description, datePublished: new Date(row.created_at).toLocaleDateString('en-GB'), fileName: row.file_name, fileSize: row.file_size, fileData: row.file_data
+          }));
+          setUploadedContent(mappedUploads);
+        }
+
+        // 4. FETCH SYSTEM CONFIGURATIONS (Restored! This fixes the Environment Governance reset)
+        const { data: configData, error: configError } = await supabase.from('system_configurations').select('*');
+        if (!configError && configData) {
+          configData.forEach(row => {
+            if (row.config_key === 'form_timelines') setFormTimelines(row.config_payload);
+            if (row.config_key === 'official_signatures') setOfficialSignatures(row.config_payload);
+          });
+        }
+
+        // 5. FETCH UI CONTROLS (Button Locks)
+        const { data: lockData, error: lockError } = await supabase.from('ui_controls').select('*');
+        if (!lockError && lockData) {
+          const lockMap: Record<string, boolean> = {};
+          lockData.forEach(row => {
+            lockMap[row.button_id] = (row.is_locked === true || String(row.is_locked).toLowerCase() === 'true');
+          });
+          setButtonLocks(lockMap);
+        }
+      } catch (err: any) {
+        console.error("Database sync error:", err.message);
       }
-    } catch (err: any) {
-      console.error("Failed to fetch live database:", err.message);
-    }
-  };
-  fetchLiveDatabase();
+    };
+    fetchLiveDatabase();
   }, []);
 
   const isFormOpen = (formId: string): boolean => {
@@ -396,6 +391,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       alert("Failed to save record to the server. Please try again.");
     }
    };
+   const toggleButtonLock = async (buttonId: string, isLocked: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('ui_controls')
+        .upsert(
+          { button_id: buttonId, is_locked: isLocked, last_updated: new Date().toISOString() },
+          { onConflict: 'button_id' } // 🔑 THIS IS THE CRITICAL FIX
+        );
+      
+      if (error) {
+        console.error("Supabase Database Error:", error);
+        throw error;
+      }
+      
+      // Update local memory instantly
+      setButtonLocks(prev => ({ ...prev, [buttonId]: isLocked }));
+    } catch (err: any) {
+      console.error("Failed to toggle button lock:", err.message);
+      alert("Failed to update button lock status in the database! Check console.");
+    }
+  };
+  
   const deleteSubmission = async (id: string) => {
     try {
       const { error } = await supabase.from('form_submissions').delete().eq('ref_id', id);
@@ -446,6 +463,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       user, login, logout, 
       dataRecords, addDataRecord, deleteDataRecord,
       adminUsers,
+      buttonLocks, toggleButtonLock,
       uploadedContent, publishContent, deleteContent,
       formTimelines, updateFormTimeline, updateAllFormTimelines, isFormOpen,
       officialSignatures, updateOfficialSignatures,

@@ -51,7 +51,7 @@ const CAREER_PLATFORMS = [
 const LEADERSHIP = [
   {
     name: "Er. Ravi Chaudhary",
-    title: "Hon'ble Chancellor",
+    title: "Founder & Hon'ble Chancellor",
     image: chancellorImg,
     message: "Our mission is to cultivate a learning environment where innovation meets tradition. We are dedicated to producing educators who will inspire, lead, and contribute meaningfully to the global academic landscape."
   },
@@ -62,13 +62,13 @@ const LEADERSHIP = [
     message: "We are committed to bridging the gap between academia and industry, fostering a culture of research, and equipping our students with the strategic skills required to navigate a rapidly evolving global ecosystem."
   },
   {
-    name: "Dr. Badiadka Narayana",
+    name: "Prof. (Dr.) Badiadka Narayana",
     title: "Vice Chancellor",
     image: vcImg,
     message: "Academic rigor and student welfare are the cornerstones of our operations. We strive to provide a holistic, transformative educational experience that shapes not just successful careers, but exceptional character."
   },
   {
-    name: "Dr. Rumki Bandopadhyay",
+    name: "Prof. (Dr) Rumki Bandyopadhyay",
     title: "Pro Vice Chancellor",
     image: pvcImg,
     message: "Through continuous curriculum innovation and active campus engagement, we ensure that our pedagogical approaches remain at the absolute cutting edge of modern educational and technological standards."
@@ -77,7 +77,7 @@ const LEADERSHIP = [
 
 export const Home: React.FC = () => {
   const navigate = useNavigate();
-  const { isFormOpen, galleryImages, uploadedContent } = useAuth();
+  const { isFormOpen, galleryImages, uploadedContent, buttonLocks } = useAuth();
   const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
@@ -191,12 +191,26 @@ export const Home: React.FC = () => {
               {SERVICE_BUTTONS.map(btn => {
                 const count = getArtifactCount(btn.category);
                 const isOpen = isFormOpen(btn.id);
+                const isLocked = buttonLocks[btn.id] === true; 
+                
                 if (!isOpen) return null;
+                
                 return (
-                  <button key={btn.id} onClick={() => navigate(btn.path)} className="flex flex-col items-center justify-center p-4 md:p-10 bg-white border border-black rounded-[1.5rem] md:rounded-[2.5rem] shadow-xl hover:bg-kku-blue hover:text-white transition-all transform hover:-translate-y-1 group relative overflow-hidden">
-                    {count > 0 && <div className="absolute top-2 right-2 md:top-4 md:right-4 bg-kku-gold text-kku-blue text-[8px] md:text-[9px] font-black px-2 py-0.5 rounded-full shadow-md animate-pulse">{count} New</div>}
+                  <button 
+                    key={btn.id} 
+                    onClick={(e) => {
+                      if (isLocked) {
+                        e.preventDefault();
+                        alert(`🔒 The ${btn.label} portal is currently locked by the Administrator.`);
+                        return;
+                      }
+                      navigate(btn.path);
+                    }} 
+                    className={`flex flex-col items-center justify-center p-4 md:p-10 bg-white border border-black rounded-[1.5rem] md:rounded-[2.5rem] shadow-xl transition-all transform group relative overflow-hidden ${isLocked ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:bg-kku-blue hover:text-white hover:-translate-y-1'}`}
+                  >
+                    {count > 0 && !isLocked && <div className="absolute top-2 right-2 md:top-4 md:right-4 bg-kku-gold text-kku-blue text-[8px] md:text-[9px] font-black px-2 py-0.5 rounded-full shadow-md animate-pulse">{count} New</div>}
                     <div className="w-8 h-8 md:w-12 md:h-12 mb-4 md:mb-6 text-kku-gold group-hover:text-white transition-colors"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-full h-full"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={btn.icon}></path></svg></div>
-                    <span className="text-[9px] md:text-[11px] font-black uppercase text-center tracking-wider md:tracking-widest leading-tight">{btn.label}</span>
+                    <span className="text-[9px] md:text-[11px] font-black uppercase text-center tracking-wider md:tracking-widest leading-tight">{btn.label} {isLocked && ' (Locked)'}</span>
                   </button>
                 );
               })}
@@ -252,12 +266,26 @@ export const Home: React.FC = () => {
           <div className="mb-16 md:mb-24 animate-fadeIn">
             <h2 className="text-xl md:text-3xl font-serif font-black text-blue-900 uppercase tracking-[0.1em] md:tracking-[0.3em] border-l-4 md:border-l-8 border-red-700 pl-4 md:pl-8 mb-8 md:mb-12">Institutional Registrations</h2>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6">
-              {visibleFormButtons.map(btn => (
-                <button key={btn.id} onClick={() => navigate(btn.path)} className="flex flex-col items-center justify-center p-4 md:p-10 border-2 border-blue-900 bg-white rounded-[1.5rem] md:rounded-[2.5rem] transition-all shadow-xl hover:-translate-y-1 hover:bg-blue-900 hover:text-white group">
-                  <div className="w-8 h-8 md:w-12 md:h-12 mb-4 md:mb-6"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-full h-full text-blue-900 group-hover:text-white"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={btn.icon}></path></svg></div>
-                  <span className="text-[9px] md:text-[11px] font-black uppercase text-center tracking-wider md:tracking-widest leading-tight">{btn.label}</span>
-                </button>
-              ))}
+              {visibleFormButtons.map(btn => {
+                const isLocked = buttonLocks[btn.id] === true; 
+                return (
+                  <button 
+                    key={btn.id} 
+                    onClick={(e) => {
+                      if (isLocked) {
+                        e.preventDefault();
+                        alert(`🔒 The ${btn.label} is currently locked by the Administrator.`);
+                        return;
+                      }
+                      navigate(btn.path);
+                    }} 
+                    className={`flex flex-col items-center justify-center p-4 md:p-10 border-2 border-blue-900 bg-white rounded-[1.5rem] md:rounded-[2.5rem] transition-all shadow-xl group ${isLocked ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:-translate-y-1 hover:bg-blue-900 hover:text-white'}`}
+                  >
+                    <div className="w-8 h-8 md:w-12 md:h-12 mb-4 md:mb-6"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className={`w-full h-full ${isLocked ? 'text-gray-400' : 'text-blue-900 group-hover:text-white'}`}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={btn.icon}></path></svg></div>
+                    <span className="text-[9px] md:text-[11px] font-black uppercase text-center tracking-wider md:tracking-widest leading-tight">{btn.label} {isLocked && ' (Locked)'}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}

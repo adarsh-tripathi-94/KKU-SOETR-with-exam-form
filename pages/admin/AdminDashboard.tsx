@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { MockSubmission, UploadedContent, OfficialSignatures, DataEntryRecord, PersonDomain } from '../../types';
+import { MockSubmission, UploadedContent, DataEntryRecord, PersonDomain } from '../../types';
 import { PROGRAMMES } from '../../constants';
 import * as XLSX from 'xlsx';
 import { Logo } from '../../components/Logo';
@@ -90,7 +90,7 @@ const getOfficialDocumentHTML = (entry: MockSubmission) => {
 export const AdminDashboard: React.FC = () => {
   const { 
     logout, submissions, deleteSubmission, 
-    uploadedContent, publishContent, deleteContent, 
+    uploadedContent, publishContent, toggleButtonLock, buttonLocks,
     formTimelines, updateFormTimeline, updateAllFormTimelines,
     dataRecords, deleteDataRecord
   } = useAuth();
@@ -321,19 +321,36 @@ export const AdminDashboard: React.FC = () => {
                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{sub.formType} | {sub.id}</p>
             </div>
          </div>
-         <div className="grid grid-cols-2 gap-y-6 gap-x-12">
-            {Object.entries(d || {}).map(([k, v]) => (
-              <div key={k} className="border-b border-gray-100 pb-2">
-                <label className="text-[9px] font-black text-gray-400 uppercase block mb-1">{k}</label>
-                {typeof v === 'string' && (v.startsWith('data:image') || v.startsWith('http') && (k.toLowerCase().includes('photo') || k.toLowerCase().includes('signature'))) ? (
-                  <img src={v} className="h-24 object-contain border border-black rounded shadow-sm bg-gray-50 p-1" alt={k} />
-                ) : (
-                  <span className="font-black uppercase text-kku-blue text-sm">{String(v)}</span>
-                )}
-              </div>
-            ))}
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                   {[
+                     { id: 'notice-board', label: 'Notice Board' },
+                     { id: 'assignments', label: 'Assignment Questions' },
+                     { id: 'timetable', label: 'Academic Time-Table' },
+                     { id: 'question-bank', label: 'Question Bank' },
+                     { id: 'study-materials', label: 'Study Materials' },
+                     { id: 'result', label: 'Exam Results' },
+                     { id: 'data-entry', label: 'Data Entry Form' },
+                     { id: 'exam', label: 'Examination Form' },
+                     { id: 'internship', label: 'Internship Letter' },
+                     { id: 'leave', label: 'Leave Application' },
+                     { id: 'grievance', label: 'Fill Grievance' }
+                   ].map(btn => (
+                     <div key={btn.id} className="flex flex-col sm:flex-row items-center justify-between p-6 border-4 border-gray-100 rounded-[2rem] bg-gray-50 hover:border-kku-blue/20 transition-all gap-4">
+                       <span className="font-black uppercase text-sm tracking-widest text-kku-blue">{btn.label}</span>
+                       <button 
+                         onClick={() => toggleButtonLock(btn.id, !buttonLocks[btn.id])}
+                         className={`px-8 py-4 rounded-full font-black text-[10px] uppercase tracking-widest transition-all shadow-md border-2 w-full sm:w-auto ${
+                           buttonLocks[btn.id] 
+                           ? 'bg-red-100 text-red-700 border-red-300 hover:bg-red-700 hover:text-white' 
+                           : 'bg-green-100 text-green-700 border-green-300 hover:bg-green-700 hover:text-white'
+                         }`}
+                       >
+                         {buttonLocks[btn.id] ? '🔒 LOCKED' : '🔓 UNLOCKED'}
+                       </button>
+                     </div>
+                   ))}
+                 </div>
          </div>
-      </div>
     );
   };
 
