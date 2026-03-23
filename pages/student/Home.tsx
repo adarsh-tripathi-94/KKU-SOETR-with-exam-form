@@ -6,6 +6,7 @@ import chancellorImg from './ChancellorSir.png';
 import proChancellorImg from './PC.png';
 import vcImg from './VC.png';
 import pvcImg from './PVC.png';
+import registrarImg from './registrar.png';
 
 const SERVICE_BUTTONS = [
   { id: 'notice-board', label: 'Notice Board', path: '/view/notice-board', category: 'Notice', icon: 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9' },
@@ -38,14 +39,6 @@ const OFFICIAL_LINKS = [
   { name: "SWAYAM", url: "https://swayam.gov.in/", icon: "M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" },
   { name: "IGNOU", url: "http://ignou.ac.in/", icon: "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" },
   { name: "UGC", url: "https://www.ugc.gov.in/", icon: "M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" }
-];
-
-const CAREER_PLATFORMS = [
-  { name: "Sarkari Result", url: "https://www.sarkariresult.com", icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2", color: "text-green-700" },
-  { name: "UPSC Hub", url: "https://www.upsc.gov.in", icon: "M12 14l9-5-9-5-9 5 9 5zm0 0l9-5-9-5-9 5 9 5zm0 0v6m0 0l4-2.25M12 20l-4-2.25", color: "text-blue-900" },
-  { name: "BPSC Portal", url: "https://bpsc.bihar.gov.in", icon: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4", color: "text-red-800" },
-  { name: "UGC-NET", url: "https://ugcnet.nta.nic.in", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z", color: "text-indigo-800" },
-  { name: "CTET Hub", url: "https://ctet.nic.in", icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2v12a2 2 0 002 2z", color: "text-sky-800" }
 ];
 
 const CAREER_PORTALS = [
@@ -84,7 +77,13 @@ const LEADERSHIP = [
     name: "Prof. (Dr) Rumki Bandyopadhyay",
     title: "Pro Vice Chancellor",
     image: pvcImg,
-    message: "Through continuous curriculum innovation and active campus engagement, we ensure that our pedagogical approaches remain at the absolute cutting edge of modern educational and technological standards."
+    message: "Through continuous curriculum innovation and active campus engagement, we ensure that our pedagogical approaches remain at the absolute cutting edge of modern educational and technological standards.",
+  },
+  {
+    name: "Dr. Kaushlendra Pathak",
+    title: "Registrar",
+    image: registrarImg,
+    message: "Ensuring administrative excellence and seamless academic operations to support our students, faculty, and institutional growth in achieving their highest potential."
   }
 ];
 
@@ -168,10 +167,34 @@ export const Home: React.FC = () => {
               <div className="h-1.5 w-24 md:w-32 bg-kku-gold mt-4 rounded-full"></div>
             </div>
             
+            {/* 1. THE BIG CHANCELLOR SECTION */}
+            <div className="bg-white border-4 border-kku-blue rounded-[3rem] md:rounded-[4rem] overflow-hidden shadow-2xl mb-10 flex flex-col md:flex-row group hover:-translate-y-2 transition-all">
+              <div className="md:w-2/5 h-[400px] md:h-auto relative border-b-4 md:border-b-0 md:border-r-4 border-kku-gold overflow-hidden shrink-0">
+                <img 
+                  src={LEADERSHIP[0].image} 
+                  alt={LEADERSHIP[0].title} 
+                  className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-700" 
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#001F3F] via-[#001F3F]/40 to-transparent"></div>
+                <div className="absolute bottom-0 left-0 w-full p-8 md:p-10">
+                  <h3 className="text-3xl md:text-5xl font-black uppercase text-white leading-none drop-shadow-2xl mb-2">{LEADERSHIP[0].name}</h3>
+                  <p className="text-sm md:text-lg font-black tracking-[0.3em] text-kku-gold uppercase drop-shadow-md">{LEADERSHIP[0].title}</p>
+                </div>
+              </div>
+              <div className="md:w-3/5 p-10 md:p-16 flex flex-col justify-center bg-gray-50 relative">
+                <span className="text-8xl md:text-[10rem] text-kku-gold/10 absolute top-0 left-4 font-serif leading-none">"</span>
+                <p className="text-lg md:text-3xl font-bold text-gray-700 italic leading-relaxed relative z-10">
+                  {LEADERSHIP[0].message}
+                </p>
+                <span className="text-8xl md:text-[10rem] text-kku-gold/10 absolute bottom-0 right-8 font-serif transform rotate-180 leading-none">"</span>
+              </div>
+            </div>
+
+            {/* 2. THE 4-COLUMN GRID FOR THE REST */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {LEADERSHIP.map((leader, index) => (
+              {LEADERSHIP.slice(1).map((leader, index) => (
                 <div key={index} className="bg-white border-4 border-kku-blue rounded-[2.5rem] overflow-hidden shadow-xl hover:shadow-2xl transition-all group flex flex-col hover:-translate-y-2">
-                  <div className="h-64 overflow-hidden relative border-b-4 border-kku-gold">
+                  <div className="h-64 overflow-hidden relative border-b-4 border-kku-gold shrink-0">
                     <img 
                       src={leader.image} 
                       alt={leader.title} 
@@ -184,11 +207,11 @@ export const Home: React.FC = () => {
                     </div>
                   </div>
                   <div className="p-8 flex-1 flex flex-col items-center text-center bg-gray-50 relative">
-                    <span className="text-6xl text-kku-gold/20 absolute -top-2 left-4 font-serif">"</span>
+                    <span className="text-6xl text-kku-gold/20 absolute -top-2 left-4 font-serif leading-none">"</span>
                     <p className="text-sm font-bold text-gray-700 italic leading-relaxed relative z-10">
                       {leader.message}
                     </p>
-                    <span className="text-6xl text-kku-gold/20 absolute bottom-0 right-4 font-serif transform rotate-180">"</span>
+                    <span className="text-6xl text-kku-gold/20 absolute bottom-0 right-4 font-serif transform rotate-180 leading-none">"</span>
                   </div>
                 </div>
               ))}
@@ -255,20 +278,6 @@ export const Home: React.FC = () => {
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-full h-full"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={link.icon}></path></svg>
                   </div>
                   <span className="text-[8.5px] sm:text-[9px] md:text-[11px] font-black uppercase text-center tracking-tight md:tracking-widest leading-tight break-words w-full px-0.5 text-blue-900 group-hover:text-white">{link.name}</span>
-                </a>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <h4 className="text-lg md:text-xl font-serif font-black text-blue-900 uppercase tracking-[0.1em] md:tracking-[0.3em] border-l-4 border-blue-900 pl-4 md:pl-6 mb-6 md:mb-8">Career Search Portals</h4>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6">
-              {CAREER_PLATFORMS.map(p => (
-                <a key={p.name} href={p.url} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center justify-center p-4 md:p-10 bg-white border border-black rounded-[1.5rem] md:rounded-[2.5rem] shadow-xl hover:bg-blue-900 hover:text-white transition-all transform hover:-translate-y-1 group">
-                  <div className={`w-8 h-8 md:w-12 md:h-12 mb-4 md:mb-6 ${p.color} group-hover:text-white transition-colors`}>
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-full h-full"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={p.icon}></path></svg>
-                  </div>
-                  <span className="text-[9px] md:text-[11px] font-black uppercase text-center tracking-wider md:tracking-widest leading-tight">{p.name}</span>
                 </a>
               ))}
             </div>
