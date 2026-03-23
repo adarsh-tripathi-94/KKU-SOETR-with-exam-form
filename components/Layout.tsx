@@ -34,17 +34,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     <div className="min-h-screen flex flex-col bg-gray-50 overflow-x-hidden">
       <Header onMenuToggle={() => setIsSidebarVisible(!isSidebarVisible)} />
       
-      {/* Persistent Print Button */}
-      <button 
-        onClick={() => window.print()}
-        className="fixed top-24 md:top-[144px] right-6 z-[60] bg-white text-kku-blue border-2 border-kku-blue px-4 py-2 rounded-xl font-black text-[10px] uppercase shadow-xl hover:bg-kku-blue hover:text-white transition-all transform active:scale-95 no-print flex items-center gap-2"
-        title="Print current page"
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-        </svg>
-        <span>Print Page</span>
-      </button>
 
       <div className="flex flex-1 relative pt-[80px] md:pt-[128px]">
         <Sidebar isOpen={isSidebarVisible} onClose={() => setIsSidebarVisible(false)} />

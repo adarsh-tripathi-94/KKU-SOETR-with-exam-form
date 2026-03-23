@@ -76,7 +76,7 @@ const LEADERSHIP = [
   {
     name: "Prof. (Dr) Rumki Bandyopadhyay",
     title: "Pro Vice Chancellor",
-    image: pvcImg,
+    image: pvcImg,  
     message: "Through continuous curriculum innovation and active campus engagement, we ensure that our pedagogical approaches remain at the absolute cutting edge of modern educational and technological standards.",
   },
   {
@@ -117,7 +117,7 @@ export const Home: React.FC = () => {
           <div key={img.id} className={`absolute inset-0 transition-all duration-[2000ms] ease-in-out ${idx === currentSlide ? 'opacity-100 scale-100 z-10' : 'opacity-0 scale-110 z-0'}`}>
             <div className="w-full h-full bg-cover bg-center" style={{ backgroundImage: `url("${img.url}")` }}>
               <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent"></div>
-              <div className="absolute bottom-10 md:bottom-12 left-4 md:left-24 text-white max-w-[90%] md:max-w-5xl animate-fadeIn pr-4">
+              <div className="absolute bottom-16 md:bottom-20 left-4 md:left-24 text-white max-w-[90%] md:max-w-5xl animate-fadeIn pr-4">
                 <span className="bg-kku-gold text-kku-blue px-4 md:px-6 py-1 text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] mb-4 inline-block rounded-full shadow-lg">SOETR Academic Hub</span>
                 <h2 className="text-2xl md:text-5xl font-serif font-black uppercase tracking-tight leading-none drop-shadow-2xl break-words">{img.title}</h2>
                 <p className="text-xs md:text-lg font-bold text-gray-300 mt-2 md:mt-4 tracking-wide max-w-3xl leading-relaxed line-clamp-2 md:line-clamp-none">{img.description}</p>
@@ -131,15 +131,59 @@ export const Home: React.FC = () => {
         )}
         
         {activeGallery.length > 1 && (
-          <div className="absolute bottom-4 md:bottom-6 right-4 md:right-12 flex gap-2 z-30 flex-wrap justify-end">
+          <div className="absolute bottom-12 md:bottom-16 right-4 md:right-12 flex gap-2 z-30 flex-wrap justify-end">
             {activeGallery.map((_, i) => (
               <button key={i} onClick={() => setCurrentSlide(i)} className={`h-2 rounded-full transition-all border border-white/50 ${i === currentSlide ? 'bg-kku-gold w-6 md:w-8 ring-2 ring-kku-gold/30 shadow-lg' : 'bg-white/20 w-2 hover:bg-white/40'}`} />
             ))}
           </div>
         )}
+
+        {/* INTEGRATED PREMIUM NEWS TICKER (Bottom Strip) */}
+        <div className="absolute bottom-0 left-0 w-full h-10 md:h-12 bg-black/80 backdrop-blur-md border-t-2 border-kku-gold z-40 flex items-center overflow-hidden shadow-[0_-10px_20px_rgba(0,0,0,0.5)]">
+           
+           {/* Fixed "Live Updates" Badge on the left */}
+           <div className="bg-gradient-to-r from-kku-gold to-yellow-500 h-full flex items-center justify-center px-4 md:px-8 z-50 relative shrink-0 shadow-[5px_0_15px_rgba(0,0,0,0.8)] border-r-2 border-yellow-300">
+              <span className="text-kku-blue font-black uppercase tracking-widest text-[10px] md:text-xs flex items-center gap-2 drop-shadow-sm">
+                 <span className="w-2 md:w-2.5 h-2 md:h-2.5 rounded-full bg-red-600 animate-pulse border border-red-900 shadow-[0_0_8px_rgba(220,38,38,0.8)]"></span>
+                 LIVE UPDATES
+              </span>
+           </div>
+
+           {/* Pure CSS Smooth Scrolling Text */}
+           <div className="flex-1 overflow-hidden relative h-full flex items-center">
+              <style>
+                 {`
+                    @keyframes premium-scroll {
+                       0% { transform: translateX(100vw); }
+                       100% { transform: translateX(-100%); }
+                    }
+                    .animate-premium-scroll {
+                       display: inline-block;
+                       white-space: nowrap;
+                       animation: premium-scroll 15s linear infinite;
+                       will-change: transform;
+                    }
+                    .animate-premium-scroll:hover {
+                       animation-play-state: paused;
+                    }
+                 `}
+              </style>
+              {/* Changed w-full to w-max so it calculates the full text length correctly! */}
+              <div className="animate-premium-scroll text-white text-[10px] md:text-xs font-black uppercase tracking-[0.2em] w-max cursor-default pt-1 pr-[100vw]">
+                 <span className="text-kku-gold mx-4 text-sm drop-shadow-[0_0_5px_rgba(212,175,55,0.8)]">★</span>
+                 OFFICIAL ACADEMIC NOTICE: EXAMINATION FORMS FOR THE CURRENT SEMESTER ARE NOW AVAILABLE FOR ALL DEPARTMENTS. 
+                 <span className="text-red-500 mx-4 text-sm drop-shadow-[0_0_5px_rgba(239,68,68,0.8)]">●</span>
+                 ENSURE YOUR DATA ENTRY FORM IS COMPLETED AND APPROVED.
+                 <span className="text-kku-gold mx-4 text-sm drop-shadow-[0_0_5px_rgba(212,175,55,0.8)]">★</span>
+                 WELCOME TO THE K.K. UNIVERSITY SOETR ACADEMIC HUB. PLEASE CHECK THE OFFICIAL NOTICE BOARD FOR THE LATEST CIRCULARS.
+              </div>
+           </div>
+        </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 md:px-8 w-full -mt-8 md:-mt-14 relative z-20">
+      {/* Changed negative margins (-mt-8) to positive margins (mt-8) to push the buttons down safely */}
+      <div className="max-w-7xl mx-auto px-4 md:px-8 w-full mt-8 md:mt-12 relative z-20">
+        
         {/* Top Feature Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-16">
           <button onClick={() => navigate('/portal/search')} className="flex flex-col items-center p-6 md:p-8 bg-white border-2 border-kku-blue rounded-[2rem] md:rounded-[2.5rem] shadow-2xl hover:-translate-y-2 transition-all group">

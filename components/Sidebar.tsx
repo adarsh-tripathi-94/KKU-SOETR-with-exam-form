@@ -11,7 +11,7 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const location = useLocation();
-  const { isFormOpen } = useAuth();
+  const { isFormOpen, buttonLocks } = useAuth();
 
   return (
     <>
@@ -43,17 +43,28 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             const isExternal = link.path.startsWith('http');
             const isActive = !isExternal && location.pathname === link.path;
             
+            // Map the exact URL paths to the button_ids in your ui_controls database table
             const formMap: Record<string, string> = {
+              // The Forms
               '/form/data-entry': 'data-entry',
               '/form/exam': 'exam',
               '/form/leave': 'leave',
               '/form/internship': 'internship',
               '/form/grievance': 'grievance',
-              'https://kk-university-feedback-portal.ramayanyug.workers.dev': 'feedback'
+              'https://kk-university-feedback-portal.ramayanyug.workers.dev': 'feedback',
+              // The Service Views (ADDED THESE SO THE SIDEBAR KNOWS THEY CAN BE LOCKED!)
+              '/view/notice-board': 'notice-board',
+              '/view/assignments': 'assignments',
+              '/view/timetable': 'timetable',
+              '/view/question-bank': 'question-bank',
+              '/view/study-materials': 'study-materials',
+              '/view/result': 'result'
             };
             
             const formId = formMap[link.path];
-            const isFormLocked = formId ? !isFormOpen(formId) : false;
+            
+            // Check BOTH locking systems: Environment Governance OR Master Access Controls
+            const isFormLocked = formId ? (!isFormOpen(formId) || buttonLocks[formId] === true) : false;
 
             const baseClasses = "group relative flex items-center px-6 py-5 rounded-[2.5rem] transition-all duration-500 ease-out border overflow-hidden shadow-sm";
             
