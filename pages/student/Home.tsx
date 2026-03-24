@@ -138,8 +138,27 @@ export const Home: React.FC = () => {
           </div>
         )}
 
-        {/* INTEGRATED PREMIUM NEWS TICKER (Bottom Strip) */}
-        <div className="absolute bottom-0 left-0 w-full h-10 md:h-12 bg-black/80 backdrop-blur-md border-t-2 border-kku-gold z-40 flex items-center overflow-hidden shadow-[0_-10px_20px_rgba(0,0,0,0.5)]">
+        {/* INTEGRATED PREMIUM NEWS TICKER (Bulletproof Loop + Live Updates Badge) */}
+        <div className="absolute bottom-0 left-0 w-full h-10 md:h-12 bg-black/90 backdrop-blur-md border-t-2 border-kku-gold z-40 flex items-center overflow-hidden shadow-[0_-5px_15px_rgba(0,0,0,0.5)]">
+           <style>
+              {`
+                 @keyframes true-infinite-marquee {
+                    0% { transform: translateX(0); }
+                    100% { transform: translateX(-100%); }
+                 }
+                 .animate-marquee-block {
+                    display: flex;
+                    flex-shrink: 0;
+                    align-items: center;
+                    white-space: nowrap;
+                    /* 25s controls the speed. Lower = faster! */
+                    animation: true-infinite-marquee 25s linear infinite;
+                 }
+                 .ticker-wrapper:hover .animate-marquee-block {
+                    animation-play-state: paused;
+                 }
+              `}
+           </style>
            
            {/* Fixed "Live Updates" Badge on the left */}
            <div className="bg-gradient-to-r from-kku-gold to-yellow-500 h-full flex items-center justify-center px-4 md:px-8 z-50 relative shrink-0 shadow-[5px_0_15px_rgba(0,0,0,0.8)] border-r-2 border-yellow-300">
@@ -149,33 +168,28 @@ export const Home: React.FC = () => {
               </span>
            </div>
 
-           {/* Pure CSS Smooth Scrolling Text */}
-           <div className="flex-1 overflow-hidden relative h-full flex items-center">
-              <style>
-                 {`
-                    @keyframes premium-scroll {
-                       0% { transform: translateX(100vw); }
-                       100% { transform: translateX(-100%); }
-                    }
-                    .animate-premium-scroll {
-                       display: inline-block;
-                       white-space: nowrap;
-                       animation: premium-scroll 15s linear infinite;
-                       will-change: transform;
-                    }
-                    .animate-premium-scroll:hover {
-                       animation-play-state: paused;
-                    }
-                 `}
-              </style>
-              {/* Changed w-full to w-max so it calculates the full text length correctly! */}
-              <div className="animate-premium-scroll text-white text-[10px] md:text-xs font-black uppercase tracking-[0.2em] w-max cursor-default pt-1 pr-[100vw]">
-                 <span className="text-kku-gold mx-4 text-sm drop-shadow-[0_0_5px_rgba(212,175,55,0.8)]">★</span>
-                 OFFICIAL ACADEMIC NOTICE: EXAMINATION FORMS FOR THE CURRENT SEMESTER ARE NOW AVAILABLE FOR ALL DEPARTMENTS. 
-                 <span className="text-red-500 mx-4 text-sm drop-shadow-[0_0_5px_rgba(239,68,68,0.8)]">●</span>
-                 ENSURE YOUR DATA ENTRY FORM IS COMPLETED AND APPROVED.
-                 <span className="text-kku-gold mx-4 text-sm drop-shadow-[0_0_5px_rgba(212,175,55,0.8)]">★</span>
-                 WELCOME TO THE K.K. UNIVERSITY SOETR ACADEMIC HUB. PLEASE CHECK THE OFFICIAL NOTICE BOARD FOR THE LATEST CIRCULARS.
+           {/* The Scrolling Text Area */}
+           <div className="ticker-wrapper flex flex-1 overflow-hidden h-full relative">
+              {/* --- COPY 1 --- */}
+              <div className="animate-marquee-block text-white text-[10px] md:text-xs font-black uppercase tracking-[0.2em] pr-12">
+                 <span className="text-kku-gold mx-4 text-sm">★</span>
+                 <span className="text-red-500 mx-4 text-sm">●</span>
+                 <span className="mr-8">OFFICIAL ACADEMIC NOTICE: EXAMINATION FORMS FOR THE CURRENT SEMESTER ARE NOW AVAILABLE FOR ALL DEPARTMENTS. ENSURE YOUR DATA ENTRY FORM IS COMPLETED AND APPROVED.</span>
+                 
+                 <span className="text-kku-gold mx-4 text-sm">★</span>
+                 <span className="text-red-500 mx-4 text-sm">●</span>
+                 <span className="mr-8">WELCOME TO THE K.K. UNIVERSITY SOETR ACADEMIC HUB. PLEASE CHECK THE OFFICIAL NOTICE BOARD FOR THE LATEST CIRCULARS.</span>
+              </div>
+              
+              {/* --- COPY 2 (The Seamless Loop) --- */}
+              <div className="animate-marquee-block text-white text-[10px] md:text-xs font-black uppercase tracking-[0.2em] pr-12" aria-hidden="true">
+                 <span className="text-kku-gold mx-4 text-sm">★</span>
+                 <span className="text-red-500 mx-4 text-sm">●</span>
+                 <span className="mr-8">OFFICIAL ACADEMIC NOTICE: EXAMINATION FORMS FOR THE CURRENT SEMESTER ARE NOW AVAILABLE FOR ALL DEPARTMENTS. ENSURE YOUR DATA ENTRY FORM IS COMPLETED AND APPROVED.</span>
+                 
+                 <span className="text-kku-gold mx-4 text-sm">★</span>
+                 <span className="text-red-500 mx-4 text-sm">●</span>
+                 <span className="mr-8">WELCOME TO THE K.K. UNIVERSITY SOETR ACADEMIC HUB. PLEASE CHECK THE OFFICIAL NOTICE BOARD FOR THE LATEST CIRCULARS.</span>
               </div>
            </div>
         </div>
