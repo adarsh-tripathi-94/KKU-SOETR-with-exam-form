@@ -174,22 +174,18 @@ export const Home: React.FC = () => {
               <div className="animate-marquee-block text-white text-[10px] md:text-xs font-black uppercase tracking-[0.2em] pr-12">
                  <span className="mr-8">{liveUpdatesText}</span>
                  <span className="text-red-500 mx-4 text-sm">●</span>
-                 <span className="mr-8">OFFICIAL ACADEMIC NOTICE: EXAMINATION FORMS FOR THE CURRENT SEMESTER ARE NOW AVAILABLE FOR ALL DEPARTMENTS. ENSURE YOUR DATA ENTRY FORM IS COMPLETED AND APPROVED.</span>
                  
                  <span className="text-kku-gold mx-4 text-sm">★</span>
                  <span className="text-red-500 mx-4 text-sm">●</span>
-                 <span className="mr-8">WELCOME TO THE K.K. UNIVERSITY SOETR ACADEMIC HUB. PLEASE CHECK THE OFFICIAL NOTICE BOARD FOR THE LATEST CIRCULARS.</span>
               </div>
               
               {/* --- COPY 2 (The Seamless Loop) --- */}
               <div className="animate-marquee-block text-white text-[10px] md:text-xs font-black uppercase tracking-[0.2em] pr-12" aria-hidden="true">
                  <span className="mr-8">{liveUpdatesText}</span>
                  <span className="text-red-500 mx-4 text-sm">●</span>
-                 <span className="mr-8">OFFICIAL ACADEMIC NOTICE: EXAMINATION FORMS FOR THE CURRENT SEMESTER ARE NOW AVAILABLE FOR ALL DEPARTMENTS. ENSURE YOUR DATA ENTRY FORM IS COMPLETED AND APPROVED.</span>
                  
                  <span className="text-kku-gold mx-4 text-sm">★</span>
                  <span className="text-red-500 mx-4 text-sm">●</span>
-                 <span className="mr-8">WELCOME TO THE K.K. UNIVERSITY SOETR ACADEMIC HUB. PLEASE CHECK THE OFFICIAL NOTICE BOARD FOR THE LATEST CIRCULARS.</span>
               </div>
            </div>
         </div>
