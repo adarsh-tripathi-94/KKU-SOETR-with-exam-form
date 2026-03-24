@@ -97,6 +97,7 @@ export const AdminDashboard: React.FC = () => {
   } = useAuth();
 
   const [tickerInput, setTickerInput] = useState(liveUpdatesText);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [personnelSearch, setPersonnelSearch] = useState('');
   const [personnelProgramme, setPersonnelProgramme] = useState('');
   
@@ -125,9 +126,39 @@ export const AdminDashboard: React.FC = () => {
     setUploadData({ category: 'Notice', programme: 'All Programmes', year: 'All Years', semester: 'All Semesters' });
   };
 
-  const exportRegistry = () => {
-    let filteredSubmissions = submissions.filter(s => s.formType === dbCategory);
+  // --- ADD THIS NEW FUNCTION ---
+  const getUnifiedSubmissions = (): MockSubmission[] => {
+    // If we are looking at Data Entry, pull from the Master Student Records!
+    if (dbCategory === 'Data Entry') {
+      return dataRecords.map(rec => ({
+        id: rec.id,
+        date: 'Master Record',
+        enrollmentNo: rec.basicInfo.enrollmentNo,
+        name: rec.basicInfo.name,
+        programme: rec.basicInfo.programme,
+        formType: 'Data Entry',
+        data: {
+          session: rec.basicInfo.session,
+          year: rec.basicInfo.year,
+          semester: rec.basicInfo.semester,
+          fatherName: rec.basicInfo.fatherName,
+          motherName: rec.basicInfo.motherName,
+          mobile: rec.basicInfo.contact1,
+          email: rec.basicInfo.email,
+          address: rec.basicInfo.address,
+          photoUrl: rec.basicInfo.photoUrl,
+          eduDetails: rec.basicInfo.eduDetails
+        },
+        isRead: true
+      }));
+    }
+    // Otherwise, pull from normal form submissions
+    return submissions.filter(s => s.formType === dbCategory);
+  };
 
+  const exportRegistry = () => {
+    let filteredSubmissions = getUnifiedSubmissions();
+    
     // Apply the filters to the export data
     if (dbFilters.programme) filteredSubmissions = filteredSubmissions.filter(s => s.programme === dbFilters.programme);
     if (dbFilters.session) filteredSubmissions = filteredSubmissions.filter(s => s.data?.session === dbFilters.session);
@@ -241,7 +272,7 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const getFilteredSubmissions = () => {
-    return submissions.filter(s => s.formType === dbCategory)
+    return getUnifiedSubmissions()
       .filter(s => !dbFilters.programme || s.programme === dbFilters.programme)
       .filter(s => !dbFilters.session || s.data?.session === dbFilters.session)
       .filter(s => !dbFilters.year || s.data?.year === dbFilters.year)
@@ -313,46 +344,68 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const renderSubmissionArtifact = (sub: MockSubmission) => {
-    const d = sub.data;
+    const d = sub.data || {};
+    
     return (
-      <div className="bg-white p-12 w-full max-w-[210mm] border-4 border-kku-blue rounded-3xl shadow-2xl opacity-100 font-serif">
+      <div className="bg-white p-8 md:p-12 w-full max-w-[210mm] border-4 border-kku-blue rounded-3xl shadow-2xl opacity-100 font-sans text-left">
          <div className="flex justify-between items-center border-b-4 border-kku-gold pb-6 mb-8">
-            <Logo className="w-20 h-20" />
+            <Logo className="w-16 h-16 md:w-20 md:h-20" />
             <div className="text-right">
-               <h1 className="text-2xl font-black uppercase text-kku-blue m-0">Institutional Artifact</h1>
+               <h1 className="text-xl md:text-2xl font-black uppercase text-kku-blue m-0">Institutional Artifact</h1>
                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{sub.formType} | {sub.id}</p>
             </div>
          </div>
-         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                   {[
-                     { id: 'notice-board', label: 'Notice Board' },
-                     { id: 'assignments', label: 'Assignment Questions' },
-                     { id: 'timetable', label: 'Academic Time-Table' },
-                     { id: 'question-bank', label: 'Question Bank' },
-                     { id: 'study-materials', label: 'Study Materials' },
-                     { id: 'result', label: 'Exam Results' },
-                     { id: 'data-entry', label: 'Data Entry Form' },
-                     { id: 'exam', label: 'Examination Form' },
-                     { id: 'internship', label: 'Internship Letter' },
-                     { id: 'leave', label: 'Leave Application' },
-                     { id: 'grievance', label: 'Fill Grievance' }
-                   ].map(btn => (
-                     <div key={btn.id} className="flex flex-col sm:flex-row items-center justify-between p-6 border-4 border-gray-100 rounded-[2rem] bg-gray-50 hover:border-kku-blue/20 transition-all gap-4">
-                       <span className="font-black uppercase text-sm tracking-widest text-kku-blue">{btn.label}</span>
-                       <button 
-                         onClick={() => toggleButtonLock(btn.id, !buttonLocks[btn.id])}
-                         className={`px-8 py-4 rounded-full font-black text-[10px] uppercase tracking-widest transition-all shadow-md border-2 w-full sm:w-auto ${
-                           buttonLocks[btn.id] 
-                           ? 'bg-red-100 text-red-700 border-red-300 hover:bg-red-700 hover:text-white' 
-                           : 'bg-green-100 text-green-700 border-green-300 hover:bg-green-700 hover:text-white'
-                         }`}
-                       >
-                         {buttonLocks[btn.id] ? '🔒 LOCKED' : '🔓 UNLOCKED'}
-                       </button>
-                     </div>
-                   ))}
-                 </div>
+         
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            {/* Standard Meta Data */}
+            <div className="col-span-1 md:col-span-2 bg-gray-50 p-6 rounded-2xl border-2 border-gray-100">
+               <h3 className="text-sm font-black uppercase text-kku-blue border-b-2 border-gray-200 pb-2 mb-4">Primary Identity</h3>
+               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div><p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Student Name</p><p className="font-bold text-sm uppercase">{sub.name}</p></div>
+                  <div><p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Enrollment No</p><p className="font-bold text-sm uppercase">{sub.enrollmentNo}</p></div>
+                  <div><p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Programme</p><p className="font-bold text-sm uppercase">{sub.programme}</p></div>
+                  <div><p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Date Submitted</p><p className="font-bold text-sm uppercase">{sub.date}</p></div>
+               </div>
+            </div>
+
+            {/* Dynamic Form Data */}
+            {Object.entries(d).map(([key, value]) => {
+              if (value === null || value === undefined || value === '') return null;
+              
+              const formattedKey = key.replace(/([A-Z])/g, ' $1').trim();
+
+              // Handle Images (Photos & Signatures)
+              if (key === 'photoUrl' || key === 'studentSignatureUrl') {
+                return (
+                  <div key={key} className="col-span-1 border-2 border-gray-100 p-4 rounded-2xl bg-gray-50 flex flex-col items-center justify-center">
+                    <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-3 w-full border-b pb-2">{formattedKey}</p>
+                    <img src={value as string} alt={key} className="max-h-32 rounded-lg border border-gray-300 shadow-sm" />
+                  </div>
+                );
+              }
+
+              // Handle Complex Nested Objects/Arrays (like Educational Details or Subjects)
+              if (typeof value === 'object') {
+                 return (
+                   <div key={key} className="col-span-1 md:col-span-2 border-2 border-gray-100 p-4 rounded-2xl bg-gray-50">
+                     <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-2 border-b pb-2">{formattedKey}</p>
+                     <pre className="text-[10px] font-mono bg-white p-3 rounded-xl border border-gray-200 overflow-x-auto text-gray-700">
+                       {JSON.stringify(value, null, 2)}
+                     </pre>
+                   </div>
+                 );
+              }
+              
+              // Handle Standard Text Fields
+              return (
+                <div key={key} className="col-span-1 border-2 border-gray-100 p-4 rounded-2xl bg-gray-50">
+                  <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">{formattedKey}</p>
+                  <p className="font-bold text-sm uppercase break-words text-gray-800">{String(value)}</p>
+                </div>
+              );
+            })}
          </div>
+      </div>
     );
   };
 
@@ -362,7 +415,9 @@ export const AdminDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex font-sans overflow-hidden opacity-100">
-      <aside className="bg-[#000F1F] text-white w-80 shrink-0 border-r-8 border-kku-gold flex flex-col z-[60] shadow-[15px_0_60px_rgba(0,0,0,0.5)]">
+      {/* Sidebar only renders if isSidebarOpen is true */}
+      {isSidebarOpen && (
+        <aside className="bg-[#000F1F] text-white w-80 shrink-0 border-r-8 border-kku-gold flex flex-col z-[60] shadow-[15px_0_60px_rgba(0,0,0,0.5)] animate-fadeIn">
         <div className="p-10 text-center border-b border-white/5 bg-black/20">
           <Logo className="w-16 h-16 mb-4 mx-auto" />
           <h1 className="text-kku-gold font-serif text-2xl font-black uppercase tracking-tighter">Admin Hub</h1>
@@ -380,13 +435,28 @@ export const AdminDashboard: React.FC = () => {
           <button onClick={handleLogout} className="w-full bg-red-800/20 text-red-500 border-2 border-red-800/30 py-4 rounded-2xl font-black uppercase text-[9px] tracking-widest hover:bg-red-800 hover:text-white transition-all shadow-xl">Secure Sign Out</button>
         </div>
       </aside>
+        )}
 
       <main className="flex-1 flex flex-col bg-white overflow-y-auto custom-scrollbar">
-        <header className="bg-white border-b-4 border-gray-100 px-12 py-10 flex justify-between items-center sticky top-0 z-50 shadow-sm">
-          <div>
-            <h2 className="text-2xl font-black uppercase tracking-[0.2em] text-kku-blue">{activeTab} Environment</h2>
-            <p className="text-[9px] font-black uppercase text-gray-400 tracking-widest mt-1">Authorized Command Center Gateway</p>
+        <header className="bg-white border-b-4 border-gray-100 px-8 md:px-12 py-8 flex justify-between items-center sticky top-0 z-50 shadow-sm">
+          <div className="flex items-center gap-6">
+            {/* THE TOGGLE BUTTON */}
+            <button 
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="p-3 bg-gray-100 text-kku-blue rounded-xl hover:bg-kku-gold hover:text-white transition-all shadow-sm hover:shadow-md"
+              title="Toggle Sidebar"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            
+            <div>
+              <h2 className="text-2xl font-black uppercase tracking-[0.2em] text-kku-blue">{activeTab} Environment</h2>
+              <p className="text-[9px] font-black uppercase text-gray-400 tracking-widest mt-1">Authorized Command Center Gateway</p>
+            </div>
           </div>
+          
           <div className="flex items-center gap-6">
              <div className="flex items-center gap-3 bg-green-50 px-4 py-2 rounded-full border border-green-100">
                 <span className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.5)]"></span>
@@ -507,13 +577,7 @@ export const AdminDashboard: React.FC = () => {
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-                {submissions
-                  .filter(s => s.formType === dbCategory)
-                  .filter(s => !dbFilters.programme || s.programme === dbFilters.programme)
-                  .filter(s => !dbFilters.session || s.data?.session === dbFilters.session)
-                  .filter(s => !dbFilters.year || s.data?.year === dbFilters.year)
-                  .filter(s => !dbFilters.semester || s.data?.semester === dbFilters.semester)
-                  .map(sub => (
+                {getFilteredSubmissions().map(sub => (
                   <div key={sub.id} className="bg-white border-2 border-black p-10 rounded-[3.5rem] shadow-xl group hover:shadow-2xl transition-all relative overflow-hidden">
                      <div className="flex justify-between items-start mb-8 relative z-10">
                         <span className="text-[9px] font-black text-kku-gold uppercase bg-kku-blue px-4 py-1.5 rounded-full shadow-md">{sub.id}</span>
