@@ -67,6 +67,8 @@ interface AuthContextType {
   updateDataRecord: (id: string, record: DataEntryRecord) => Promise<void>;
   buttonLocks: Record<string, boolean>;
   toggleButtonLock: (buttonId: string, isLocked: boolean) => Promise<void>;
+  liveUpdatesText: string;
+  updateLiveUpdatesText: (text: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -74,6 +76,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>({ role: Role.STUDENT });
   const [dataRecords, setDataRecords] = useState<DataEntryRecord[]>([]);
+  const [liveUpdatesText, setLiveUpdatesText] = useState<string>("Loading updates...");
   const [adminUsers] = useState<AdminUser[]>([
     { id: 'admin-1', email: 'soe.bkt1980@gmail.com', password: 'brijesh@1980', role: AdminRole.SUPER_ADMIN }
   ]);
@@ -126,6 +129,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           configData.forEach(row => {
             if (row.config_key === 'form_timelines') setFormTimelines(row.config_payload);
             if (row.config_key === 'official_signatures') setOfficialSignatures(row.config_payload);
+            if (row.config_key === 'live_updates') setLiveUpdatesText(row.config_payload);
           });
         }
 
@@ -412,6 +416,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       alert("Failed to update button lock status in the database! Check console.");
     }
   };
+
+  const updateLiveUpdatesText = async (text: string) => {
+    try {
+      const { error } = await supabase
+        .from('system_configurations')
+        .upsert({ config_key: 'live_updates', config_payload: text }, { onConflict: 'config_key' });
+      
+      if (error) throw error;
+      setLiveUpdatesText(text); // Update UI instantly
+      alert("Live Updates Ticker successfully updated!");
+    } catch (err: any) {
+      console.error("Failed to update ticker:", err.message);
+      alert("Failed to update ticker text.");
+    }
+  };
   
   const deleteSubmission = async (id: string) => {
     try {
@@ -469,6 +488,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       officialSignatures, updateOfficialSignatures,
       galleryImages: galleryImages.length > 0 ? galleryImages : DEFAULT_GALLERY,
       addGalleryImage, deleteGalleryImage,
+      liveUpdatesText, updateLiveUpdatesText,
       submissions, addSubmission, deleteSubmission, markSubmissionAsRead, generateRefNo, getSchoolEnrollmentCount, verifyStudentExists
     }}>
       {children}

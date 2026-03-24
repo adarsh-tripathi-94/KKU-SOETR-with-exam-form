@@ -89,7 +89,7 @@ const LEADERSHIP = [
 
 export const Home: React.FC = () => {
   const navigate = useNavigate();
-  const { isFormOpen, galleryImages, uploadedContent, buttonLocks } = useAuth();
+  const { isFormOpen, galleryImages, uploadedContent, buttonLocks, liveUpdatesText } = useAuth();
   const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
@@ -172,7 +172,7 @@ export const Home: React.FC = () => {
            <div className="ticker-wrapper flex flex-1 overflow-hidden h-full relative">
               {/* --- COPY 1 --- */}
               <div className="animate-marquee-block text-white text-[10px] md:text-xs font-black uppercase tracking-[0.2em] pr-12">
-                 <span className="text-kku-gold mx-4 text-sm">★</span>
+                 <span className="mr-8">{liveUpdatesText}</span>
                  <span className="text-red-500 mx-4 text-sm">●</span>
                  <span className="mr-8">OFFICIAL ACADEMIC NOTICE: EXAMINATION FORMS FOR THE CURRENT SEMESTER ARE NOW AVAILABLE FOR ALL DEPARTMENTS. ENSURE YOUR DATA ENTRY FORM IS COMPLETED AND APPROVED.</span>
                  
@@ -183,7 +183,7 @@ export const Home: React.FC = () => {
               
               {/* --- COPY 2 (The Seamless Loop) --- */}
               <div className="animate-marquee-block text-white text-[10px] md:text-xs font-black uppercase tracking-[0.2em] pr-12" aria-hidden="true">
-                 <span className="text-kku-gold mx-4 text-sm">★</span>
+                 <span className="mr-8">{liveUpdatesText}</span>
                  <span className="text-red-500 mx-4 text-sm">●</span>
                  <span className="mr-8">OFFICIAL ACADEMIC NOTICE: EXAMINATION FORMS FOR THE CURRENT SEMESTER ARE NOW AVAILABLE FOR ALL DEPARTMENTS. ENSURE YOUR DATA ENTRY FORM IS COMPLETED AND APPROVED.</span>
                  
