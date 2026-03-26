@@ -91,8 +91,14 @@ export const A4FormWrapper: React.FC<A4FormWrapperProps> = ({ children, title, p
         fontFamily: '"Times New Roman", Times, serif'
       }}
     >
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03] rotate-[-45deg] z-0">
-         <span className="text-[100px] font-black uppercase whitespace-nowrap">K.K. UNIVERSITY</span>
+      {/* --- FULL-WIDTH BACKGROUND WATERMARK FOR PDF EXPORT --- */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden">
+        <img 
+          src="../components/logo.jpg" 
+          alt="University Watermark"
+          // w-full makes it span 100% of the page width. h-auto scales the height perfectly.
+          className="w-full h-auto object-contain opacity-10" 
+        />
       </div>
 
       <div className="flex-1 flex flex-col w-full h-full relative z-10 p-[10mm] pb-[2mm] border-[1.5mm] border-[#001F3F] box-border bg-white opacity-100">

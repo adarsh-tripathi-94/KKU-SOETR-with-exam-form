@@ -71,6 +71,7 @@ export interface DataEntryRecord {
     name: string;
     fatherName: string;
     motherName: string;
+    dob: string;
     programme: string;
     session: string;
     year: string;
@@ -85,6 +86,7 @@ export interface DataEntryRecord {
     address: string;
     eduDetails?: any[];
   };
+  isFullySubmitted: boolean;
   attendance1?: AttendanceRecord[];
   attendance2?: AttendanceRecord[];
   practical1?: PracticalFileStatus[];

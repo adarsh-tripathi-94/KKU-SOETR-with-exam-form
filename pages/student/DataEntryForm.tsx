@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { StudentFormData, EducationalDetail } from '../../types';
+import { StudentFormData, EducationalDetail, DataEntryRecord, PersonDomain } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { 
   PROGRAMMES, 
@@ -19,16 +19,19 @@ const INITIAL_EDU_DETAILS: EducationalDetail[] = [
 
 export const DataEntryForm: React.FC = () => {
   const navigate = useNavigate();
-  const { addSubmission, generateRefNo } = useAuth();
+  // 🔑 Brought in secureStudentSubmission instead of addSubmission
+  const { secureStudentSubmission, generateRefNo } = useAuth();
   const [currentRefNo, setCurrentRefNo] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const [formData, setFormData] = useState<Partial<StudentFormData>>({
+  // 🔑 Added dob to the state
+  const [formData, setFormData] = useState<Partial<StudentFormData & { dob: string }>>({
     name: '',
     fatherName: '',
     motherName: '',
     enrollmentNo: '',
+    dob: '', 
     programme: 'B.Ed.',
     session: '',
     year: '',
@@ -67,7 +70,6 @@ export const DataEntryForm: React.FC = () => {
   // --- PIN CODE AUTO-DETECT LOGIC ---
   useEffect(() => {
     const fetchLocationData = async () => {
-      // Indian PIN codes are exactly 6 digits.
       if (formData.pinCode && formData.pinCode.length === 6) {
         try {
           const response = await fetch(`https://api.postalpincode.in/pincode/${formData.pinCode}`);
@@ -82,13 +84,12 @@ export const DataEntryForm: React.FC = () => {
             }));
           } else {
             console.warn("Invalid PIN Code entered");
-            setFormData(prev => ({ ...prev, city: '', state: '' })); // Clear if invalid
+            setFormData(prev => ({ ...prev, city: '', state: '' }));
           }
         } catch (error) {
           console.error("Failed to fetch PIN code data", error);
         }
       } else if (formData.pinCode && formData.pinCode.length < 6) {
-         // Clear fields if user deletes digits
          setFormData(prev => ({ ...prev, city: '', state: '' }));
       }
     };
@@ -116,61 +117,110 @@ export const DataEntryForm: React.FC = () => {
 
   const handleVerifyAndSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.enrollmentNo || !formData.photoUrl) {
-      alert("Institutional Mandate: Student Name, Admission ID, and Photo are mandatory for registry synchronization.");
+    
+    // 🔑 STRICT VALIDATION: Every single field is compulsory
+    if (!formData.name || !formData.fatherName || !formData.motherName || !formData.enrollmentNo || !formData.dob || !formData.mobile || !formData.email || !formData.address || !formData.pinCode || !formData.photoUrl) {
+      alert("Institutional Mandate: All fields, including your Date of Birth and Photo, are completely mandatory. Please fill in all empty fields.");
       return;
     }
 
-    if (!window.confirm("Verify Digital Registry? All particulars will be synchronized with the master SOETR database.")) return;
+    if (!window.confirm("Verify Digital Registry? Once submitted, your records will be permanently locked and synchronized with the master SOETR database.")) return;
 
     setIsSaving(true);
-    await new Promise(r => setTimeout(r, 2000));
+    
+    // Construct the Master Record exactly as the database expects it
+    const secureRecord: DataEntryRecord = {
+      id: '', // The backend will inject the correct ID automatically
+      domain: PersonDomain.STUDENT,
+      isFullySubmitted: true,
+      basicInfo: {
+        enrollmentNo: formData.enrollmentNo,
+        dob: formData.dob,
+        name: formData.name,
+        fatherName: formData.fatherName,
+        motherName: formData.motherName,
+        programme: formData.programme || '',
+        session: formData.session || '',
+        year: formData.year || '',
+        semester: formData.semester || '',
+        contact1: formData.mobile,
+        whatsapp: formData.whatsapp || formData.mobile,
+        email: formData.email,
+        address: `${formData.address}, ${formData.city}, ${formData.state} - ${formData.pinCode}`,
+        pinCode: formData.pinCode,
+        photoUrl: formData.photoUrl,
+        eduDetails: formData.eduDetails || []
+      },
+      // Empty arrays to satisfy the record structure
+      attendance1: [], attendance2: [], practical1: [], practical2: [],
+      communityOutreach1: [], examinations1: [], sports: [], qualifications: [],
+      academicAchievements: {} as any, adminWork: {} as any, evaluation: {} as any,
+      technicalAchievements: {} as any, otherResponsibilities: []
+    };
 
-    addSubmission({
-      id: currentRefNo,
-      date: new Date().toLocaleDateString('en-GB'),
-      enrollmentNo: formData.enrollmentNo || '',
-      name: formData.name || '',
-      programme: formData.programme || '',
-      formType: 'Data Entry',
-      data: { ...formData, refNo: currentRefNo, timestamp: new Date().toISOString() }
-    });
+    // 🔑 THE HANDSHAKE: Call the secure submission
+    const result = await secureStudentSubmission(formData.enrollmentNo, formData.dob, secureRecord);
 
     setIsSaving(false);
-    setIsSubmitted(true);
+
+    if (result.success) {
+      setIsSubmitted(true);
+    } else {
+      // This will alert them if the DOB is wrong or if they are already locked!
+      alert(result.message); 
+    }
   };
 
   const downloadWord = () => {
-    let content = `K.K. UNIVERSITY - SOETR DATA ENTRY REGISTRY\n`;
-    content += `Reference ID: ${currentRefNo}\n\n`;
-    content += `SECTION A: BASIC INFORMATION\n`;
-    content += `Name: ${formData.name}\n`;
-    content += `Father's Name: ${formData.fatherName}\n`;
-    content += `Mother's Name: ${formData.motherName}\n`;
-    content += `Admission ID: ${formData.enrollmentNo}\n`;
-    content += `Programme: ${formData.programme}\n`;
-    content += `Session: ${formData.session}\n`;
-    content += `Year: ${formData.year}\n`;
-    content += `Semester: ${formData.semester}\n`;
-    content += `Contact: ${formData.mobile}\n`;
-    content += `WhatsApp: ${formData.whatsapp}\n`;
-    content += `Email: ${formData.email}\n`;
-    content += `Address: ${formData.address}\n`;
-    content += `PIN Code: ${formData.pinCode}\n`;
-    content += `City: ${formData.city}\n`;
-    content += `State: ${formData.state}\n\n`;
-    content += `SECTION 2: EDUCATIONAL DETAILS\n`;
-    formData.eduDetails?.forEach(edu => {
-      content += `${edu.programme}: Year ${edu.year}, Subject ${edu.subject}, Board ${edu.board}, Result ${edu.result}%\n`;
-    });
+    // We construct an HTML string so Word can render styles and the massive watermark!
+    const content = `
+      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+      <head><meta charset='utf-8'><title>Registry Record</title></head>
+      <body style="font-family: Arial, sans-serif;">
+        <div style="position: relative; max-width: 800px; margin: 0 auto; border: 3px solid #001F3F; padding: 40px; background: #fff; overflow: hidden;">
+          
+          <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; z-index: 0; opacity: 0.10; text-align: center; pointer-events: none;">
+             <img src="https://upload.wikimedia.org/wikipedia/en/thumb/8/87/K.K._University_logo.png/220px-K.K._University_logo.png" style="width: 100%; height: auto; object-fit: contain;" alt="Watermark" />
+          </div>
 
-    const blob = new Blob([content], { type: 'application/msword' });
+          <div style="position: relative; z-index: 10;">
+            <div style="text-align: center; border-bottom: 4px solid #001F3F; padding-bottom: 20px; margin-bottom: 30px;">
+              <h1 style="color: #001F3F; margin: 0; font-size: 26px;">K.K. UNIVERSITY - SOETR</h1>
+              <h2 style="margin: 10px 0; font-size: 16px;">DATA ENTRY REGISTRY</h2>
+              <p style="font-size: 11px; color: #666; font-weight: bold;">Reference ID: ${currentRefNo}</p>
+            </div>
+            
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr><th style="padding: 10px; border: 1px solid #000; background: #f0f0f0; text-align: left; width: 30%;">Name</th><td style="padding: 10px; border: 1px solid #000; font-weight: bold;">${formData.name}</td></tr>
+              <tr><th style="padding: 10px; border: 1px solid #000; background: #f0f0f0; text-align: left;">Admission ID</th><td style="padding: 10px; border: 1px solid #000; font-weight: bold;">${formData.enrollmentNo}</td></tr>
+              <tr><th style="padding: 10px; border: 1px solid #000; background: #f0f0f0; text-align: left;">Date of Birth</th><td style="padding: 10px; border: 1px solid #000; font-weight: bold;">${formData.dob}</td></tr>
+              <tr><th style="padding: 10px; border: 1px solid #000; background: #f0f0f0; text-align: left;">Programme</th><td style="padding: 10px; border: 1px solid #000; font-weight: bold;">${formData.programme} (${formData.session})</td></tr>
+              <tr><th style="padding: 10px; border: 1px solid #000; background: #f0f0f0; text-align: left;">Contact</th><td style="padding: 10px; border: 1px solid #000; font-weight: bold;">${formData.mobile} | ${formData.email}</td></tr>
+              <tr><th style="padding: 10px; border: 1px solid #000; background: #f0f0f0; text-align: left;">Address</th><td style="padding: 10px; border: 1px solid #000; font-weight: bold;">${formData.address}, ${formData.city}, ${formData.state} - ${formData.pinCode}</td></tr>
+            </table>
+
+            <h3 style="margin-top: 30px; border-bottom: 2px solid #ccc; padding-bottom: 5px;">Educational Details</h3>
+            <table style="width: 100%; border-collapse: collapse; text-align: center;">
+              <tr><th style="border: 1px solid #000; padding: 5px; background: #f0f0f0;">Programme</th><th style="border: 1px solid #000; padding: 5px; background: #f0f0f0;">Year</th><th style="border: 1px solid #000; padding: 5px; background: #f0f0f0;">Board</th><th style="border: 1px solid #000; padding: 5px; background: #f0f0f0;">Result</th></tr>
+              ${formData.eduDetails?.map(edu => {
+                if(!edu.year) return '';
+                return `<tr><td style="border: 1px solid #000; padding: 5px;">${edu.programme}</td><td style="border: 1px solid #000; padding: 5px;">${edu.year}</td><td style="border: 1px solid #000; padding: 5px;">${edu.board}</td><td style="border: 1px solid #000; padding: 5px;">${edu.result}%</td></tr>`;
+              }).join('')}
+            </table>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    // \ufeff is the BOM (Byte Order Mark) that forces Word to read it as UTF-8
+    const blob = new Blob(['\ufeff', content], { type: 'application/msword' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = `SOETR_Registry_${formData.enrollmentNo}.doc`;
     link.click();
-  };
+  }; 
 
   const labelCls = "block text-[10pt] font-black uppercase tracking-widest text-black mb-1";
   const inputCls = "w-full border-2 border-black/30 p-2.5 font-bold uppercase rounded-xl outline-none focus:border-kku-blue bg-white text-black opacity-100 placeholder-gray-300";
@@ -198,9 +248,31 @@ export const DataEntryForm: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-200 py-10 flex flex-col items-center font-serif text-black overflow-x-hidden">
+      
+      {/* --- NEW BACK TO HOME BUTTON --- */}
+      <div className="w-full max-w-full md:max-w-[210mm] flex justify-start mb-4 px-4 md:px-0 no-print">
+        <button
+          type="button"
+          onClick={() => navigate('/')}
+          className="flex items-center gap-2 text-[#001F3F] font-black uppercase text-[10px] tracking-widest hover:text-kku-gold transition-colors bg-white px-5 py-2.5 rounded-full shadow-md border-2 border-black/5 group"
+        >
+          <svg className="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+          </svg>
+          Return to Institutional Hub
+        </button>
+      </div>
+
       {/* High-Impact Digital Form Container */}
       <div className="bg-white shadow-2xl border-[1.5mm] border-[#001F3F] p-4 md:p-[10mm] w-full max-w-full md:max-w-[210mm] min-h-[297mm] box-border relative overflow-hidden">
-        
+      {/* --- OFFICIAL PNG BACKGROUND WATERMARK --- */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden">
+          <img 
+            src="../components/logo.jpg" 
+            alt="University Watermark"
+            className="w-full max-w-[85%] object-contain opacity-30" 
+          />
+        </div>
         {/* Header Section */}
         <div className="flex items-center justify-between mb-2">
            <div className="flex items-center gap-6">
@@ -218,7 +290,6 @@ export const DataEntryForm: React.FC = () => {
            </div>
         </div>
 
-        {/* 2MM Line Divider */}
         <div className="h-[2mm] bg-[#001F3F] w-full mb-10 shadow-sm"></div>
 
         <form onSubmit={handleVerifyAndSave} className="space-y-12">
@@ -230,12 +301,16 @@ export const DataEntryForm: React.FC = () => {
             </div>
 
             <div className="flex flex-col lg:flex-row gap-10">
-              {/* Left Column Fields */}
               <div className="flex-1 grid grid-cols-1 gap-6">
                 <div><label className={labelCls}>Name of Candidate</label><input required value={formData.name || ''} onChange={e => setFormData({...formData, name: e.target.value})} className={inputCls} placeholder="ENTER FULL LEGAL NAME" /></div>
                 <div><label className={labelCls}>Father's Name</label><input required value={formData.fatherName || ''} onChange={e => setFormData({...formData, fatherName: e.target.value})} className={inputCls} placeholder="ENTER FATHER'S NAME" /></div>
                 <div><label className={labelCls}>Mother's Name</label><input required value={formData.motherName || ''} onChange={e => setFormData({...formData, motherName: e.target.value})} className={inputCls} placeholder="ENTER MOTHER'S NAME" /></div>
-                <div><label className={labelCls}>Student Admission ID</label><input required value={formData.enrollmentNo || ''} onChange={e => setFormData({...formData, enrollmentNo: e.target.value})} className={inputCls} placeholder="KKU/SOETR/XXXX" /></div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 w-full">
+                  <div><label className={labelCls}>Student Admission ID</label><input required value={formData.enrollmentNo || ''} onChange={e => setFormData({...formData, enrollmentNo: e.target.value})} className={inputCls} placeholder="KKU/SOETR/XXXX" /></div>
+                  {/* 🔑 THE CALENDAR DATE OF BIRTH INPUT */}
+                  <div><label className={labelCls}>Date of Birth (Security Key)</label><input type="date" required value={formData.dob || ''} onChange={e => setFormData({...formData, dob: e.target.value})} className={inputCls} /></div>
+                </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 w-full">
                    <div>
@@ -300,7 +375,6 @@ export const DataEntryForm: React.FC = () => {
                  <textarea required value={formData.address || ''} onChange={e => setFormData({...formData, address: e.target.value})} className={`${inputCls} h-24 normal-case p-4`} placeholder="COMPLETE PHYSICAL ADDRESS..." />
                </div>
                
-               {/* UPDATED: Postal Code Auto-Detect Row */}
                <div className="md:col-span-2 grid grid-cols-3 gap-4">
                  <div>
                    <label className={labelCls}>Pin Code</label>
@@ -344,6 +418,7 @@ export const DataEntryForm: React.FC = () => {
                         <td className="p-3 border-r border-black/5 font-black text-kku-blue text-[10.5pt] leading-tight">{edu.programme}</td>
                         <td className="p-2 border-r border-black/5">
                           <input 
+                            required={idx < 2} // At least 10th and 12th are required!
                             value={edu.year} 
                             onChange={e => handleEduChange(idx, 'year', e.target.value)} 
                             className="w-full p-1.5 text-center font-black bg-transparent border-b border-black/10 outline-none focus:border-kku-blue" 
@@ -352,6 +427,7 @@ export const DataEntryForm: React.FC = () => {
                         </td>
                         <td className="p-2 border-r border-black/5">
                           <input 
+                            required={idx < 2}
                             value={edu.subject} 
                             onChange={e => handleEduChange(idx, 'subject', e.target.value)} 
                             className="w-full p-1.5 font-black bg-transparent border-b border-black/10 outline-none focus:border-kku-blue" 
@@ -360,6 +436,7 @@ export const DataEntryForm: React.FC = () => {
                         </td>
                         <td className="p-2 border-r border-black/5">
                           <input 
+                            required={idx < 2}
                             value={edu.board} 
                             onChange={e => handleEduChange(idx, 'board', e.target.value)} 
                             className="w-full p-1.5 font-black bg-transparent border-b border-black/10 outline-none focus:border-kku-blue" 
@@ -368,6 +445,7 @@ export const DataEntryForm: React.FC = () => {
                         </td>
                         <td className="p-2">
                           <input 
+                            required={idx < 2}
                             value={edu.result} 
                             onChange={e => handleEduChange(idx, 'result', e.target.value)} 
                             className="w-full p-1.5 text-center font-black bg-transparent border-b border-black/10 outline-none focus:border-kku-blue" 
@@ -390,12 +468,12 @@ export const DataEntryForm: React.FC = () => {
              >
                {isSaving ? <div className="w-10 h-10 border-[1.5mm] border-white/30 border-t-white rounded-full animate-spin"></div> : (
                  <>
-                   Verify & Synchronize Registry
+                   Verify & Lock Registry
                    <svg className="w-8 h-8 transition-transform group-hover:translate-x-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
                  </>
                )}
              </button>
-             <p className="mt-10 text-[9pt] font-black uppercase text-gray-400 tracking-widest italic text-center max-w-2xl leading-relaxed opacity-100">System Verification: Upon clicking, your particulars will be assigned Reference ID {currentRefNo} and stored in the Super Admin Secure Archive. Data integrity is audited by SOETR Governance.</p>
+             <p className="mt-10 text-[9pt] font-black uppercase text-gray-400 tracking-widest italic text-center max-w-2xl leading-relaxed opacity-100">System Verification: Upon clicking, your particulars will be assigned Reference ID {currentRefNo} and locked in the Super Admin Secure Archive. You will not be able to modify these details again.</p>
           </div>
         </form>
 

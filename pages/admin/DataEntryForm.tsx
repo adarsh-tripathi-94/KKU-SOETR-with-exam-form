@@ -10,7 +10,7 @@ export const DataEntryForm: React.FC = () => {
   const location = useLocation();
   const editData = location.state?.editData as DataEntryRecord | undefined;
   
-  const { addDataRecord, updateDataRecord } = useAuth();
+  const { addDataRecord, updateDataRecord, dataRecords } = useAuth();
   const [editId, setEditId] = useState<string | null>(null);
   const navigate = useNavigate();
   const [domain, setDomain] = useState<PersonDomain>(PersonDomain.STUDENT);
@@ -21,6 +21,7 @@ export const DataEntryForm: React.FC = () => {
   // SECTION A: Basic Info
   const [basicInfo, setBasicInfo] = useState({
     enrollmentNo: '', 
+    dob: '',
     name: '', 
     fatherName: '', 
     motherName: '',
@@ -35,8 +36,9 @@ export const DataEntryForm: React.FC = () => {
   });
 
   // STUDENT SPECIFIC STATES
-  const [att1, setAtt1] = useState<AttendanceRecord[]>(MONTHS.map(m => ({ month: m.name, workingDays: m.days, presentDays: 0, percentage: 0 })));
-  const [att2, setAtt2] = useState<AttendanceRecord[]>(MONTHS.map(m => ({ month: m.name, workingDays: m.days, presentDays: 0, percentage: 0 })));
+  // STUDENT SPECIFIC STATES (Defaulted to N/A)
+  const [att1, setAtt1] = useState<AttendanceRecord[]>(MONTHS.map(m => ({ month: m.name, workingDays: m.days, presentDays: 'N/A' as any, percentage: 'N/A' as any })));
+  const [att2, setAtt2] = useState<AttendanceRecord[]>(MONTHS.map(m => ({ month: m.name, workingDays: m.days, presentDays: 'N/A' as any, percentage: 'N/A' as any })));
   const [prac1, setPrac1] = useState<PracticalFileStatus[]>([]);
   const [prac2, setPrac2] = useState<PracticalFileStatus[]>([]);
   const [outreach, setOutreach] = useState<ParticipationStatus[]>([
@@ -84,13 +86,16 @@ export const DataEntryForm: React.FC = () => {
       setEditId(editData.id);
       setDomain(editData.domain);
       setBasicInfo(editData.basicInfo);
-      if (editData.attendance1) setAtt1(editData.attendance1);
-      if (editData.attendance2) setAtt2(editData.attendance2);
-      if (editData.practical1) setPrac1(editData.practical1);
-      if (editData.practical2) setPrac2(editData.practical2);
-      if (editData.communityOutreach1) setOutreach(editData.communityOutreach1);
-      if (editData.examinations1) setExams(editData.examinations1);
-      if (editData.sports) setSports(editData.sports);
+      
+      // 🔑 THE FIX: Only overwrite the tables if the database actually has data in them!
+      // If the length is 0 (meaning the student just submitted an empty shell), it will keep your default blank tables.
+      if (editData.attendance1 && editData.attendance1.length > 0) setAtt1(editData.attendance1);
+      if (editData.attendance2 && editData.attendance2.length > 0) setAtt2(editData.attendance2);
+      if (editData.practical1 && editData.practical1.length > 0) setPrac1(editData.practical1);
+      if (editData.practical2 && editData.practical2.length > 0) setPrac2(editData.practical2);
+      if (editData.communityOutreach1 && editData.communityOutreach1.length > 0) setOutreach(editData.communityOutreach1);
+      if (editData.examinations1 && editData.examinations1.length > 0) setExams(editData.examinations1);
+      if (editData.sports && editData.sports.length > 0) setSports(editData.sports);
     }
   }, [editData]);
 
@@ -130,22 +135,27 @@ export const DataEntryForm: React.FC = () => {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // 1. Validate mandatory basic info
-    if (!basicInfo.enrollmentNo || !basicInfo.name || !basicInfo.programme) {
-      alert("Missing mandatory fields: Enrollment Number, Name, and Programme are required.");
+    if (!basicInfo.enrollmentNo || !basicInfo.dob) {
+      alert("Security Requirement: Enrollment Number and Date of Birth are mandatory.");
       return;
     }
 
-    if (!window.confirm(editId ? "Update existing student dossier?" : "Initialize new student registration?")) return;
+    if (!window.confirm("Verify and Synchronize this student's master record?")) return;
 
     setIsSaving(true);
+    await new Promise(res => setTimeout(res, 1000)); 
+
+    // 🔑 THE FIX: Smart Detection! 
+    // Check if this student already exists in our master list using their Enrollment No.
+    const existingStudent = dataRecords.find(r => r.basicInfo.enrollmentNo === basicInfo.enrollmentNo);
     
-    // Simulate gateway processing time for UI effect
-    await new Promise(res => setTimeout(res, 1500)); 
+    // If they exist, grab their hidden database ID. If not, use the editId (or leave blank for new).
+    const targetId = existingStudent?.id || editId;
 
     const record: DataEntryRecord = {
-      id: editId || '', 
+      id: targetId || '', 
       domain,
+      isFullySubmitted: existingStudent ? existingStudent.isFullySubmitted : false, // Quietly preserves lock status
       basicInfo,
       attendance1: att1,
       attendance2: att2,
@@ -163,23 +173,23 @@ export const DataEntryForm: React.FC = () => {
     };
 
     try {
-      if (editId) {
-        // IF EDITING: Update the existing record
+      if (targetId) {
+        // If we found an ID, UPDATE the existing record! (Admin overwrites data)
         if (updateDataRecord) {
-           await updateDataRecord(editId, record);
+           await updateDataRecord(targetId, record);
         } else {
-           throw new Error("updateDataRecord function is missing from AuthContext");
+           throw new Error("updateDataRecord function is missing");
         }
       } else {
-        // IF NEW: Insert a brand new record
+        // If no ID exists, INSERT a brand new student!
         await addDataRecord(record);
       }
       
-      alert(`Master Registry ${editId ? 'Updated' : 'Synchronized'} Successfully!`);
+      alert(`Master Registry ${targetId ? 'Updated' : 'Created'} Successfully!`);
       navigate('/admin-dashboard');
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert("Failed to synchronize with Master Registry.");
+      alert("Failed to synchronize with Master Registry. Check console for details.");
     } finally {
       setIsSaving(false);
     }
@@ -188,6 +198,19 @@ export const DataEntryForm: React.FC = () => {
   const inputCls = "mt-1 block w-full border-2 border-black p-3 font-black uppercase focus:ring-4 focus:ring-kku-gold/20 outline-none rounded-2xl text-sm bg-white shadow-sm transition-all";
   const labelCls = "block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5 ml-1";
   const sectionTitle = (t: string) => <h2 className="text-2xl font-black uppercase mb-10 border-l-8 border-kku-gold pl-6 text-kku-blue mt-20 tracking-widest">{t}</h2>;
+  // 🔑 SMART ATTENDANCE CALCULATOR (Ignores N/A months)
+  const getAttendanceTotals = (attArray: any[]) => {
+    let working = 0;
+    let present = 0;
+    attArray.forEach(m => {
+      if (m.presentDays !== 'N/A' && m.presentDays !== undefined && m.presentDays !== '') {
+        working += Number(m.workingDays) || 0;
+        present += Number(m.presentDays) || 0;
+      }
+    });
+    const percent = working > 0 ? Math.round((present / working) * 100) : 0;
+    return { working, present, percent };
+  };
 
   const MasterFormContent = () => (
     <div className="space-y-12 p-4">
@@ -262,7 +285,14 @@ export const DataEntryForm: React.FC = () => {
             <label className={labelCls}>Primary Clearance Domain</label>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-4">
               {Object.values(PersonDomain).map(d => (
-                <button key={d} onClick={() => setDomain(d)} className={`py-6 rounded-[2rem] font-black uppercase text-[11px] tracking-[0.2em] border-2 transition-all shadow-xl ${domain === d ? 'bg-kku-blue text-white border-kku-gold scale-105' : 'bg-white text-gray-400 border-gray-100 hover:border-kku-blue'}`}>{d}</button>
+                <button 
+                  key={d} 
+                  type="button" 
+                  onClick={() => setDomain(d)} 
+                  className={`py-6 rounded-[2rem] font-black uppercase text-[11px] tracking-[0.2em] border-2 transition-all shadow-xl ${domain === d ? 'bg-kku-blue text-white border-kku-gold scale-105' : 'bg-white text-gray-400 border-gray-100 hover:border-kku-blue'}`}
+                >
+                  {d}
+                </button>
               ))}
             </div>
           </div>
@@ -271,6 +301,7 @@ export const DataEntryForm: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-20 gap-y-10 items-start">
             <div className="space-y-6">
               <div><label className={labelCls}>Enrollment No (Admission ID)</label><input value={basicInfo.enrollmentNo} onChange={e => setBasicInfo({...basicInfo, enrollmentNo: e.target.value})} className={inputCls} placeholder="KKU/SOETR/..." /></div>
+              <div><label className={labelCls}>Date of Birth (Security Key)</label><input type="date" value={basicInfo.dob} onChange={e => setBasicInfo({...basicInfo, dob: e.target.value})} className={inputCls} /></div>
               <div><label className={labelCls}>Full Legal Name</label><input value={basicInfo.name} onChange={e => setBasicInfo({...basicInfo, name: e.target.value})} className={inputCls} /></div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 w-full">
                 <div><label className={labelCls}>Father's Name</label><input value={basicInfo.fatherName} onChange={e => setBasicInfo({...basicInfo, fatherName: e.target.value})} className={inputCls} /></div>
@@ -302,44 +333,60 @@ export const DataEntryForm: React.FC = () => {
             <>
               {sectionTitle("Section B: Attendance Synchronization")}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-                 {['First Year Cycle', 'Second Year Cycle'].map((label, yIdx) => (
-                   <div key={label} className="bg-white border-2 border-black p-8 rounded-[3rem] shadow-xl">
-                     <h4 className="font-black uppercase text-xs mb-6 text-kku-gold tracking-[0.3em] flex items-center gap-3"><span className="w-2 h-2 bg-kku-gold rounded-full"></span> {label} (AUG - JUL)</h4>
-                     <table className="w-full border-2 border-black text-[10px] font-black uppercase overflow-hidden rounded-xl shadow-lg">
-                       <thead className="bg-kku-blue text-white"><tr><th className="p-4 border-r border-white/20">Month</th><th className="p-4 border-r border-white/20">W-Days</th><th className="p-4 border-r border-white/20">Presence</th><th className="p-4">%</th></tr></thead>
-                       <tbody>
-                         {(yIdx === 0 ? att1 : att2).map((m, i) => (
-                           <tr key={m.month} className="border-b border-black/10 hover:bg-gray-50 transition-colors">
-                             <td className="p-4 bg-gray-50 border-r border-black/10">{m.month}</td>
-                             <td className="p-4 text-center border-r border-black/10">{m.workingDays}</td>
-                             <td className="p-0 border-r border-black/10">
-                             <select 
-                                value={m.presentDays} 
-                                onChange={e => { 
-                                  const arr = yIdx === 0 ? [...att1] : [...att2]; 
-                                  const val = e.target.value;
-                                  if (val === 'N/A') {
-                                    arr[i].presentDays = 'N/A';
-                                    arr[i].percentage = 'N/A';
-                                  } else {
-                                    const numVal = Math.min(Number(val), m.workingDays);
-                                    arr[i].presentDays = numVal;
-                                    arr[i].percentage = Math.round((numVal / m.workingDays) * 100);
-                                  }
-                                  yIdx === 0 ? setAtt1(arr) : setAtt2(arr); 
-                                }} 
-                                className="w-full h-full p-4 text-center font-black outline-none bg-blue-50/20 appearance-none cursor-pointer"
-                                >
-                                  <                               option value="N/A">N/A</option>
+                 {['First Year Cycle', 'Second Year Cycle'].map((label, yIdx) => {
+                   const currentAtt = yIdx === 0 ? att1 : att2;
+                   const totals = getAttendanceTotals(currentAtt); // Calculate dynamically
+
+                   return (
+                     <div key={label} className="bg-white border-2 border-black p-8 rounded-[3rem] shadow-xl">
+                       <h4 className="font-black uppercase text-xs mb-6 text-kku-gold tracking-[0.3em] flex items-center gap-3"><span className="w-2 h-2 bg-kku-gold rounded-full"></span> {label} (AUG - JUL)</h4>
+                       <table className="w-full border-2 border-black text-[10px] font-black uppercase overflow-hidden rounded-xl shadow-lg">
+                         <thead className="bg-kku-blue text-white"><tr><th className="p-4 border-r border-white/20">Month</th><th className="p-4 border-r border-white/20">W-Days</th><th className="p-4 border-r border-white/20">Presence</th><th className="p-4">%</th></tr></thead>
+                         <tbody>
+                           {currentAtt.map((m, i) => (
+                             <tr key={m.month} className="border-b border-black/10 hover:bg-gray-50 transition-colors">
+                               <td className="p-4 bg-gray-50 border-r border-black/10">{m.month}</td>
+                               {/* Show the working days, but fade them out slightly if N/A is selected */}
+                               <td className={`p-4 text-center border-r border-black/10 ${m.presentDays === 'N/A' ? 'text-gray-300' : 'text-black'}`}>{m.workingDays}</td>
+                               <td className="p-0 border-r border-black/10">
+                               <select 
+                                  value={m.presentDays} 
+                                  onChange={e => { 
+                                    const arr = yIdx === 0 ? [...att1] : [...att2]; 
+                                    const val = e.target.value;
+                                    if (val === 'N/A') {
+                                      arr[i].presentDays = 'N/A';
+                                      arr[i].percentage = 'N/A';
+                                    } else {
+                                      const numVal = Math.min(Number(val), m.workingDays);
+                                      arr[i].presentDays = numVal;
+                                      arr[i].percentage = Math.round((numVal / m.workingDays) * 100);
+                                    }
+                                    yIdx === 0 ? setAtt1(arr) : setAtt2(arr); 
+                                  }} 
+                                  className={`w-full h-full p-4 text-center font-black outline-none appearance-none cursor-pointer ${m.presentDays === 'N/A' ? 'bg-gray-100/50 text-gray-400' : 'bg-blue-50/20 text-black'}`}
+                                  >
+                                    <option value="N/A">N/A</option>
                                     {[...Array(m.workingDays + 1).keys()].map(n => <option key={n} value={n}>{n}</option>)}
                                   </select></td>                                
-                             <td className="p-4 text-center text-kku-blue font-black">{m.percentage}%</td>
+                               {/* Hides the % sign if it's N/A to prevent "N/A%" */}
+                               <td className={`p-4 text-center font-black ${m.percentage === 'N/A' ? 'text-gray-400' : 'text-kku-blue'}`}>
+                                 {m.percentage === 'N/A' ? 'N/A' : `${m.percentage}%`}
+                               </td>
+                             </tr>
+                           ))}
+                           {/* 🔑 DYNAMIC TOTAL ROW */}
+                           <tr className="bg-[#001F3F] text-white">
+                             <td className="p-4 text-right font-black border-r border-white/20 tracking-widest">TOTAL:</td>
+                             <td className="p-4 text-center font-black border-r border-white/20">{totals.working}</td>
+                             <td className="p-4 text-center font-black border-r border-white/20">{totals.present}</td>
+                             <td className="p-4 text-center font-black text-kku-gold text-[12px]">{totals.percent}%</td>
                            </tr>
-                         ))}
-                       </tbody>
-                     </table>
-                   </div>
-                 ))}
+                         </tbody>
+                       </table>
+                     </div>
+                   );
+                 })}
               </div>
 
               {sectionTitle("Section C: Practical Training Repositories")}

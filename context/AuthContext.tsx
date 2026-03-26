@@ -69,6 +69,7 @@ interface AuthContextType {
   toggleButtonLock: (buttonId: string, isLocked: boolean) => Promise<void>;
   liveUpdatesText: string;
   updateLiveUpdatesText: (text: string) => Promise<void>;
+  secureStudentSubmission: (enrollmentNo: string, dob: string, fullRecord: DataEntryRecord) => Promise<{success: boolean, message: string}>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -97,8 +98,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           const mappedStudents: DataEntryRecord[] = studentsData.map(dbRow => ({
             id: dbRow.id,
             domain: dbRow.domain || 'Student',
+            isFullySubmitted: dbRow.is_fully_submitted || false,
             basicInfo: {
-              enrollmentNo: dbRow.enrollment_no || '', name: dbRow.name || '', fatherName: dbRow.father_name || '', motherName: dbRow.mother_name || '', programme: dbRow.programme || '', session: dbRow.academic_session || '', year: dbRow.academic_year || '', semester: dbRow.semester || '', contact1: dbRow.mobile || '', whatsapp: dbRow.whatsapp || '', email: dbRow.email || '', address: dbRow.address || '', pinCode: dbRow.pin_code || '', photoUrl: dbRow.photo_url || '', eduDetails: dbRow.edu_details || []
+              enrollmentNo: dbRow.enrollment_no || '', dob: dbRow.dob || '', name: dbRow.name || '', fatherName: dbRow.father_name || '', motherName: dbRow.mother_name || '', programme: dbRow.programme || '', session: dbRow.academic_session || '', year: dbRow.academic_year || '', semester: dbRow.semester || '', contact1: dbRow.mobile || '', whatsapp: dbRow.whatsapp || '', email: dbRow.email || '', address: dbRow.address || '', pinCode: dbRow.pin_code || '', photoUrl: dbRow.photo_url || '', eduDetails: dbRow.edu_details || []
             },
             ...(dbRow.extended_data || {}) 
           }));
@@ -193,12 +195,32 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUser({ role: Role.STUDENT });
   };
 
+  // 1. THE CREATE FUNCTION (With Auto-Update Hijack)
   const addDataRecord = async (record: DataEntryRecord) => {
     try {
+      const cleanEnrollmentNo = record.basicInfo.enrollmentNo.trim();
+
+      // 🛡️ THE BULLETPROOF SHIELD: Check the live database first!
+      const { data: existingArray, error: searchError } = await supabase
+        .from('students_registry')
+        .select('id')
+        .eq('enrollment_no', cleanEnrollmentNo)
+        .limit(1);
+
+      // If the student already exists, hijack the process and UPDATE instead!
+      if (existingArray && existingArray.length > 0) {
+        console.log("Existing student detected. Auto-routing to Update Mode...");
+        await updateDataRecord(existingArray[0].id, record);
+        return; // 🛑 Stop the function here so it doesn't try to insert!
+      }
+
+      // If they truly do not exist, proceed with standard INSERT
       const { error } = await supabase
         .from('students_registry')
         .insert([{
-          enrollment_no: record.basicInfo.enrollmentNo,
+          enrollment_no: cleanEnrollmentNo,
+          dob: record.basicInfo.dob,
+          is_fully_submitted: record.isFullySubmitted || false,
           name: record.basicInfo.name,
           father_name: record.basicInfo.fatherName,
           mother_name: record.basicInfo.motherName,
@@ -229,10 +251,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             otherResponsibilities: record.otherResponsibilities
           }
         }]);
-        const updateDataRecord = async (id: string, record: DataEntryRecord) => {
+
+      if (error) throw error;
+      
+      setDataRecords(prev => [record, ...prev]);
+
+    } catch (err: any) {
+      console.error("Master Registry Sync Failed:", err.message);
+      alert("Failed to save student data to the master registry.");
+    }
+  };
+  // 🔴 LOOK HERE: This closing brace fully ends addDataRecord!
+
+
+  // 2. THE UPDATE FUNCTION (Now completely free and separate!)
+  const updateDataRecord = async (id: string, record: DataEntryRecord) => {
     try {
       const { error } = await supabase.from('students_registry').update({
           enrollment_no: record.basicInfo.enrollmentNo,
+          dob: record.basicInfo.dob,
+          is_fully_submitted: record.isFullySubmitted || false,
           name: record.basicInfo.name,
           father_name: record.basicInfo.fatherName,
           mother_name: record.basicInfo.motherName,
@@ -257,13 +295,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             otherResponsibilities: record.otherResponsibilities
           }
       }).eq('id', id);
-
-      if (error) throw error;
-      setDataRecords(prev => prev.map(r => r.id === id ? record : r));
-    } catch (err: any) {
-      alert("Failed to update master registry.");
-    }
-  };
 
       if (error) throw error;
 
@@ -369,6 +400,53 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch (err) {
       console.error("Verification failed:", err);
       return false;
+    }
+  };
+
+  const secureStudentSubmission = async (enrollmentNo: string, dob: string, fullRecord: DataEntryRecord): Promise<{success: boolean, message: string}> => {
+    try {
+      // 1. Check if the record exists and matches the DOB
+      const { data: existingData, error: fetchError } = await supabase
+        .from('students_registry')
+        .select('id, dob, is_fully_submitted')
+        .eq('enrollment_no', enrollmentNo)
+        .single();
+
+      if (fetchError || !existingData) return { success: false, message: "Invalid Enrollment Number." };
+      if (existingData.dob !== dob) return { success: false, message: "Authentication Failed: Date of Birth does not match our records." };
+      if (existingData.is_fully_submitted) return { success: false, message: "Data Locked: You have already submitted your final registry details." };
+
+      // 2. If it matches and isn't locked, UPDATE the existing record and LOCK it
+      const { error: updateError } = await supabase.from('students_registry').update({
+          name: fullRecord.basicInfo.name,
+          father_name: fullRecord.basicInfo.fatherName,
+          mother_name: fullRecord.basicInfo.motherName,
+          programme: fullRecord.basicInfo.programme,
+          academic_session: fullRecord.basicInfo.session,
+          academic_year: fullRecord.basicInfo.year,
+          semester: fullRecord.basicInfo.semester,
+          mobile: fullRecord.basicInfo.contact1,
+          whatsapp: fullRecord.basicInfo.whatsapp,
+          email: fullRecord.basicInfo.email,
+          address: fullRecord.basicInfo.address,
+          pin_code: fullRecord.basicInfo.pinCode,
+          photo_url: fullRecord.basicInfo.photoUrl,
+          edu_details: fullRecord.basicInfo.eduDetails,
+          is_fully_submitted: true,
+          extended_data: { ...fullRecord }  
+      }).eq('id', existingData.id);
+
+      if (updateError) throw updateError;
+
+      // Update local state
+      fullRecord.id = existingData.id;
+      fullRecord.isFullySubmitted = true;
+      setDataRecords(prev => prev.map(r => r.id === existingData.id ? fullRecord : r));
+
+      return { success: true, message: "Registry updated and locked successfully." };
+    } catch (err: any) {
+      console.error("Secure Submission Error:", err);
+      return { success: false, message: "Server error during submission." };
     }
   };
 
@@ -483,13 +561,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       dataRecords, addDataRecord, deleteDataRecord,
       adminUsers,
       buttonLocks, toggleButtonLock,
-      uploadedContent, publishContent, deleteContent,
+      uploadedContent, publishContent,  deleteContent, updateDataRecord,
       formTimelines, updateFormTimeline, updateAllFormTimelines, isFormOpen,
       officialSignatures, updateOfficialSignatures,
       galleryImages: galleryImages.length > 0 ? galleryImages : DEFAULT_GALLERY,
       addGalleryImage, deleteGalleryImage,
       liveUpdatesText, updateLiveUpdatesText,
-      submissions, addSubmission, deleteSubmission, markSubmissionAsRead, generateRefNo, getSchoolEnrollmentCount, verifyStudentExists
+      submissions, addSubmission, deleteSubmission, markSubmissionAsRead, generateRefNo, getSchoolEnrollmentCount, verifyStudentExists,
+      secureStudentSubmission
     }}>
       {children}
     </AuthContext.Provider>
