@@ -205,18 +205,34 @@ export interface SchoolMapping {
 }
 
 export const BED_MED_SCHOOLS: SchoolMapping[] = [
-  { name: 'K.K. High School, Berauti', supervisors: ['Dr. A. Sharma'] },
-  { name: 'Government High School, Biharsharif', supervisors: ['Mr. C. Singh'] },
-  { name: 'S.S. Academy, Nalanda', supervisors: ['Ms. E. Verma'] },
-  { name: 'Model High School, Rajgir', supervisors: ['Mr. R. Yadav'] },
-  { name: 'St. Mary School, Nalanda', supervisors: ['Dr. P. Jha'] },
-  { name: 'Dav Public School, Biharsharif', supervisors: ['Mr. S. Kumar'] }
+  { name: 'शीर्षक उच्च विद्यालय, मढ़ौली', supervisors: ['श्री संजय बहादुर'] },
+  { name: 'प्रोजेक्ट कन्या +2 उच्च विद्यालय, गिरियक', supervisors: ['श्री प्रमोद कुमार'] },
+  { name: 'परमेश्वरी देवी उच्च विद्यालय, मथुरिया', supervisors: ['श्री पवन कुमार'] },
+  { name: 'टाउन हाई स्कूल, बिहारशरीफ', supervisors: ['डॉ. उपेंद्र कुमार सिंह'] },
+  { name: 'उच्च विद्यालय, नेहरू, बिहारशरीफ', supervisors: ['श्री नरेंद्र कुमार'] },
+  { name: 'उच्च विद्यालय, तुंगी', supervisors: ['श्री सौरव कुमार'] },
+  { name: 'उच्च विद्यालय, बड़ी पहाड़ी, बिहारशरीफ', supervisors: ['डॉ. धनंजय सिंह यादव'] },
+  { name: 'पी.एल. साहू उच्च विद्यालय, सोहसराय', supervisors: ['श्री कृष्ण प्रताप कुशवाहा'] },
+  { name: 'ज्वाहर कन्या उच्च विद्यालय, झींझनगर', supervisors: ['श्री केशव प्रताप कुशवाहा'] },
+  { name: 'आदर्श उच्च माध्यमिक विद्यालय, बिहारशरीफ', supervisors: ['श्री रवींद्र नाथ सिंह यादव'] },
+  { name: 'कांग्रेस उच्च माध्यमिक विद्यालय, दरियापुर', supervisors: ['श्रीमती रेखा यादव'] },
+  { name: 'उच्च माध्यमिक विद्यालय, पावापुरी', supervisors: ['श्री दुर्गेश कुमार'] },
+  { name: 'एच.एन. हरीजन हाईस्कूल आमापुर, गिरियक', supervisors: ['श्री भोला नाथ'] },
+  { name: 'उत्क्रमित मध्य विद्यालय, बिहारशरीफ', supervisors: ['श्री महंत दुबे'] }
 ];
 
 export const DELED_INT_SCHOOLS: SchoolMapping[] = [
-  { name: 'Primary School, Berauti', supervisors: ['Mr. G. Ram'] },
-  { name: 'Middle School, Nepura', supervisors: ['Dr. I. Prasad'] },
-  { name: 'K.K. Public School', supervisors: ['Ms. L. Das'] },
-  { name: 'Zila School, Biharsharif', supervisors: ['Mr. V. Tiwari'] },
-  { name: 'Basic School, Nalanda', supervisors: ['Dr. K. Singh'] }
+  { name: 'उत्क्रमित मध्य विद्यालय, महमूदपुर', supervisors: ['श्री अजय प्रकाश भारती'] },
+  { name: 'उत्क्रमित मध्य विद्यालय, दापुईपुर', supervisors: ['श्री अदित्य दूबे'] },
+  { name: 'आदर्श मध्य विद्यालय, बिहारशरीफ', supervisors: ['डॉ. अजय सिंह'] },
+  { name: 'राजकीय कन्या मध्य विद्यालय, कमरुद्धीनगंज, बिहारशरीफ', supervisors: ['श्री प्रताप कुमार मिश्रा'] },
+  { name: 'उत्क्रमित मध्य विद्यालय, सकरौल', supervisors: ['श्री शिव पूजन'] },
+  { name: 'उत्क्रमित मध्य विद्यालय, चोरसुआ', supervisors: ['श्री अनिल कुमार प्रजापति'] },
+  { name: 'उत्क्रमित मध्य विद्यालय, मढ़ौली', supervisors: ['श्री सक्ष चंद्र यादव'] },
+  { name: 'मध्य विद्यालय बड़ी पहाड़ी, बिहारशरीफ', supervisors: ['श्रीमती निशा'] },
+  { name: 'मध्य विद्यालय घोड़ाकोतोरा', supervisors: ['श्री कमलेश कुमार'] },
+  { name: 'मध्य विद्यालय, बरारा', supervisors: ['श्री राहुल कुमार सिंह'] },
+  { name: 'मध्य विद्यालय, नेहरू', supervisors: ['श्री भोला नाथ'] },
+  { name: 'मध्य विद्यालय, साबरपुर', supervisors: ['श्री चंद्रशेखर'] },
+  { name: 'नालंदा विद्यापीठ, नालंदा', supervisors: ['श्री करण सिंह'] }
 ];
