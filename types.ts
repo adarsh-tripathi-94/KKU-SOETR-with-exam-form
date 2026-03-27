@@ -129,6 +129,18 @@ export interface DataEntryRecord {
   otherResponsibilities?: ParticipationStatus[];
 }
 
+export interface Notice {
+  id?: string;
+  created_at?: string;
+  title: string;
+  message?: string;
+  fileData?: string;
+  target_programme: string;
+  target_session: string;
+  target_year: string;
+  issuer: string;
+}
+
 export interface AttendanceRecord {
   month: string;
   workingDays: number;

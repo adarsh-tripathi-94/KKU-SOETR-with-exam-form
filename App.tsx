@@ -17,7 +17,7 @@ import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { DataEntryForm as AdminDataEntry } from './pages/admin/DataEntryForm';
 import { SearchPortal } from './pages/student/SearchPortal';
 import { getSessionsForProgramme, getYearsForProgramme, getSemestersForProgramme, PROGRAMMES, isSemesterSystem } from './constants';
-
+import { NoticeBoard } from './pages/student/NoticeBoard';
 const DataDrivenView = ({ title, category }: { title: string, category: string }) => {
   const navigate = useNavigate();
   const { uploadedContent } = useAuth();
@@ -150,6 +150,7 @@ const AppContent: React.FC = () => {
         <Route path="/form/internship" element={<InternshipLetter />} />
         <Route path="/form/feedback" element={<FeedbackForm />} />
         <Route path="/form/grievance" element={<GrievanceForm />} />
+        <Route path="/view/notice-board" element={<NoticeBoard />} />
         
         <Route path="/view/notice-board" element={<DataDrivenView title="Official Notice Board" category="Notice" />} />
         <Route path="/view/assignments" element={<DataDrivenView title="Assignment Questions" category="Assignment" />} />

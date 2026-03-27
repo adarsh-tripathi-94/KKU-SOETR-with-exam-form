@@ -89,7 +89,7 @@ const LEADERSHIP = [
 
 export const Home: React.FC = () => {
   const navigate = useNavigate();
-  const { isFormOpen, galleryImages, uploadedContent, buttonLocks, liveUpdatesText } = useAuth();
+  const { isFormOpen, galleryImages, uploadedContent, buttonLocks, liveUpdatesText, notices } = useAuth();
   const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
@@ -104,6 +104,11 @@ export const Home: React.FC = () => {
   const isLeadershipVisible = isFormOpen('governing-body');
 
   const getArtifactCount = (category: string) => {
+    // 🌟 If it's looking for Notices, count our new notices array!
+    if (category === 'Notice') {
+      return notices.length;
+    }
+    // Otherwise, count standard study materials
     return uploadedContent.filter(c => c.category === category).length;
   };
 

@@ -1,6 +1,6 @@
 
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
-import { User, Role, AdminRole, DataEntryRecord, AdminUser, OfficialSignatures, UploadedContent, FormTimeline, GalleryImage, GoverningBodyMember, MockSubmission } from '../types';
+import { User, Role, AdminRole, DataEntryRecord, AdminUser, OfficialSignatures, UploadedContent, FormTimeline, GalleryImage, GoverningBodyMember, MockSubmission, Notice } from '../types';
 import { supabase } from '../supabaseClient';
 import seminarImg from '../pages/student/seminar.png';
 import festsImg from '../pages/student/fests.png';
@@ -70,6 +70,8 @@ interface AuthContextType {
   liveUpdatesText: string;
   updateLiveUpdatesText: (text: string) => Promise<void>;
   secureStudentSubmission: (enrollmentNo: string, dob: string, fullRecord: DataEntryRecord) => Promise<{success: boolean, message: string}>;
+  notices: Notice[];
+  addNotice: (notice: Notice) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -81,6 +83,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [adminUsers] = useState<AdminUser[]>([
     { id: 'admin-1', email: 'soe.bkt1980@gmail.com', password: 'brijesh@1980', role: AdminRole.SUPER_ADMIN }
   ]);
+  const [notices, setNotices] = useState<Notice[]>([]);
   const [uploadedContent, setUploadedContent] = useState<UploadedContent[]>([]);
   const [formTimelines, setFormTimelines] = useState<FormTimeline[]>(INITIAL_TIMELINES);
   const [officialSignatures, setOfficialSignatures] = useState<OfficialSignatures>({});
@@ -88,6 +91,86 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [submissions, setSubmissions] = useState<MockSubmission[]>([]);
   const [refCounter, setRefCounter] = useState(1);
   const [buttonLocks, setButtonLocks] = useState<Record<string, boolean>>({});
+
+  // --- 📢 ADVANCED NOTICE BOARD LOGIC (WITH FILES) ---
+
+  const fetchNotices = async () => {
+    try {
+      // 1. Calculate the exact date and time 30 days ago
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const cutoffDate = thirtyDaysAgo.toISOString();
+
+      // 2. Ask Supabase for notices newer than 30 days
+      const { data, error } = await supabase
+        .from('notices')
+        .select('*')
+        .gte('created_at', cutoffDate)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      // 3. Map the database snake_case to our React camelCase
+      const formattedNotices: Notice[] = (data || []).map(n => ({
+        id: n.id,
+        created_at: n.created_at,
+        title: n.title,
+        message: n.message,
+        fileData: n.file_data, // Pull the file string
+        target_programme: n.target_programme,
+        target_session: n.target_session,
+        target_year: n.target_year,
+        issuer: n.issuer
+      }));
+
+      setNotices(formattedNotices);
+    } catch (err) {
+      console.error("Failed to fetch notices:", err);
+    }
+  };
+
+  const addNotice = async (notice: Notice) => {
+    try {
+      const { data, error } = await supabase
+        .from('notices')
+        .insert([{
+          title: notice.title,
+          message: notice.message,
+          file_data: notice.fileData, // Push the file string
+          target_programme: notice.target_programme,
+          target_session: notice.target_session,
+          target_year: notice.target_year,
+          issuer: notice.issuer
+        }])
+        .select();
+
+      if (error) throw error;
+      
+      // Map it back so the UI updates instantly
+      if (data) {
+        const newNotice: Notice = {
+          id: data[0].id,
+          created_at: data[0].created_at,
+          title: data[0].title,
+          message: data[0].message,
+          fileData: data[0].file_data,
+          target_programme: data[0].target_programme,
+          target_session: data[0].target_session,
+          target_year: data[0].target_year,
+          issuer: data[0].issuer
+        };
+        setNotices(prev => [newNotice, ...prev]);
+      }
+      return true;
+    } catch (err) {
+      console.error("Failed to post notice:", err);
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    fetchNotices();
+  }, []);
 
   useEffect(() => {
     const fetchLiveDatabase = async () => {
@@ -558,6 +641,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   return (
     <AuthContext.Provider value={{ 
       user, login, logout, 
+      notices, addNotice,
       dataRecords, addDataRecord, deleteDataRecord,
       adminUsers,
       buttonLocks, toggleButtonLock,

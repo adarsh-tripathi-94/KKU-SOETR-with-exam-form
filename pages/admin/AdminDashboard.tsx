@@ -102,7 +102,7 @@ const getOfficialDocumentHTML = (entry: MockSubmission) => {
 
 export const AdminDashboard: React.FC = () => {
   const { 
-    logout, submissions, deleteSubmission, 
+    logout, submissions, deleteSubmission, addNotice,
     uploadedContent, publishContent, toggleButtonLock, buttonLocks,
     formTimelines, updateFormTimeline, updateAllFormTimelines,
     dataRecords, deleteDataRecord,
@@ -127,16 +127,58 @@ export const AdminDashboard: React.FC = () => {
 
   const onPublishArtifact = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!uploadData.title || !uploadData.fileData) return alert("Validation Error: Please provide a title and document artifact.");
+    
+    // 1. Title is mandatory for everything
+    if (!uploadData.title) return alert("Validation Error: Please provide a title.");
+    
     setIsActionLoading(true);
-    publishContent({ 
-      ...uploadData, 
-      id: Date.now().toString(), 
-      datePublished: new Date().toLocaleDateString('en-GB') 
-    } as UploadedContent);
+
+    // 2. THE BRANCH: Check if we are posting an Official Notice
+    if (uploadData.category === 'Notice') {
+      const success = await addNotice({
+        title: uploadData.title,
+        message: uploadData.message || '', 
+        fileData: uploadData.fileData || '',
+        target_programme: uploadData.programme || 'All Programmes',
+        target_session: 'All Sessions', 
+        target_year: uploadData.year || 'All Years',
+        issuer: 'Admin'
+      });
+      
+      if (success) {
+        alert("Notice Board Synchronized: Notice is now live for 30 days.");
+      } else {
+        alert("Failed to post notice to the database.");
+      }
+    } 
+    // 3. If it is NOT a notice, send it to the permanent Academic Repository
+    else {
+      if (!uploadData.fileData) {
+        setIsActionLoading(false);
+        return alert("Validation Error: Please attach a document artifact for academic resources.");
+      }
+      
+      publishContent({ 
+        ...uploadData, 
+        id: Date.now().toString(), 
+        datePublished: new Date().toLocaleDateString('en-GB') 
+      } as UploadedContent);
+      
+      alert("Repository Synchronized: Artifact is now visible to students.");
+    }
+
     setIsActionLoading(false);
-    alert("Repository Synchronized: Artifact is now visible to students.");
-    setUploadData({ category: 'Notice', programme: 'All Programmes', year: 'All Years', semester: 'All Semesters' });
+    
+    // 4. Reset the form state completely
+    setUploadData({ 
+      category: 'Notice', 
+      programme: 'All Programmes', 
+      year: 'All Years', 
+      semester: 'All Semesters', 
+      message: '', 
+      fileData: '', 
+      fileName: '' 
+    });
   };
 
   // --- ADD THIS NEW FUNCTION ---
@@ -624,6 +666,18 @@ export const AdminDashboard: React.FC = () => {
                        <div><label className={labelCls}>Target Programme</label><select value={uploadData.programme} onChange={e => setUploadData({...uploadData, programme: e.target.value})} className={inputCls}><option>All Programmes</option>{PROGRAMMES.map(p => <option key={p} value={p}>{p}</option>)}</select></div>
                     </div>
                     <div><label className={labelCls}>Artifact Title</label><input required value={uploadData.title || ''} onChange={e => setUploadData({...uploadData, title: e.target.value})} className={inputCls} placeholder="ENTER SECURE TITLE" /></div>
+                    {/* NEW TEXT MESSAGE BOX FOR NOTICES */}
+                    {uploadData.category === 'Notice' && (
+                      <div>
+                        <label className={labelCls}>Notice Message (Optional)</label>
+                        <textarea 
+                          value={uploadData.message || ''} 
+                          onChange={e => setUploadData({...uploadData, message: e.target.value})} 
+                          className={`${inputCls} h-32 normal-case`} 
+                          placeholder="Type your official notice message here..." 
+                        />
+                      </div>
+                    )}
                     <div className="p-20 border-4 border-dashed border-gray-100 rounded-[4rem] text-center relative group hover:border-kku-blue transition-all bg-gray-50/50">
                        <svg className="w-16 h-16 mx-auto mb-6 text-gray-200 group-hover:text-kku-gold transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
                        <p className="font-black text-gray-400 uppercase text-[12px] tracking-[0.3em]">{uploadData.fileName || 'Select PDF/DOCX Artifact'}</p>
